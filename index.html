@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>UFO Claw Arcade: Grammar Grabber</title>
+  <style>
+    :root {
+      --bg-dark: #09090e;
+      --bg-panel: #141221;
+      --neon-pink: #ff2a7a;
+      --neon-blue: #00f0ff;
+      --neon-purple: #b538ff;
+      --neon-gold: #ffb703;
+      --neon-green: #39ff14;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #app-frame {
+      position: relative;
+      background: var(--bg-panel);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 2px solid rgba(0, 240, 255, 0.35);
+      box-shadow: 0 0 40px rgba(181, 56, 255, 0.25), inset 0 0 30px rgba(0, 0, 0, 0.85);
+    }
+
+    /* 4:3 for Horizontal Tablet / PC */
+    @media (min-aspect-ratio: 1/1) {
+      #app-frame {
+        width: min(96vw, calc(96vh * 4 / 3));
+        height: min(96vh, calc(96vw * 3 / 4));
+        border-radius: 12px;
+      }
+    }
+
+    /* Full Vertical for Phones */
+    @media (max-aspect-ratio: 1/1) {
+      #app-frame {
+        width: 100vw;
+        height: 100dvh;
+        border: none;
+        border-radius: 0;
+      }
+    }
+
+    /* Top HUD */
+    #hud-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 14px;
+      background: rgba(10, 8, 16, 0.96);
+      border-bottom: 2px solid var(--neon-purple);
+      font-size: 13px;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .hud-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--neon-blue);
+      color: var(--neon-blue);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hud-btn {
+      background: rgba(181, 56, 255, 0.14);
+      color: #fff;
+      border: 1px solid var(--neon-purple);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+      white-space: nowrap;
+    }
+
+    .hud-btn:hover {
+      background: var(--neon-purple);
+      box-shadow: 0 0 10px var(--neon-purple);
+    }
+
+    /* Arcade Canvas Stage */
+    #arcade-stage {
+      position: relative;
+      width: 100%;
+      flex: 0 0 46%;
+      background: #070612;
+      border-bottom: 2px solid rgba(255, 42, 122, 0.45);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    @media (max-aspect-ratio: 1/1) {
+      #arcade-stage {
+        flex: 0 0 39%;
+      }
+    }
+
+    #arcade-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #arcade-timer {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      padding: 3px 11px;
+      background: rgba(10, 6, 18, 0.88);
+      border: 1.5px solid var(--neon-pink);
+      border-radius: 6px;
+      font-size: 21px;
+      font-weight: 900;
+      color: var(--neon-pink);
+      text-shadow: 0 0 10px var(--neon-pink);
+      display: none;
+    }
+
+    #mystery-banner {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      background: rgba(14, 11, 28, 0.82);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+      pointer-events: none;
+    }
+
+    /* Bottom Deck */
+    #bottom-deck {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 14px 14px;
+      background: radial-gradient(circle at 50% 0%, rgba(181, 56, 255, 0.12), transparent 70%), var(--bg-panel);
+      position: relative;
+      overflow-y: auto;
+    }
+
+    /* Quiz UI */
+    #quiz-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      gap: 8px;
+    }
+
+    .q-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .diff-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+    }
+
+    .diff-1 { background: rgba(57, 255, 20, 0.14); color: var(--neon-green); border: 1px solid rgba(57, 255, 20, 0.4); }
+    .diff-2 { background: rgba(0, 240, 255, 0.14); color: var(--neon-blue); border: 1px solid rgba(0, 240, 255, 0.4); }
+    .diff-3 { background: rgba(255, 183, 3, 0.16); color: var(--neon-gold); border: 1px solid rgba(255, 183, 3, 0.5); }
+
+    #question-text {
+      font-size: clamp(14.5px, 2.1vw, 18.5px);
+      font-weight: 700;
+      line-height: 1.48;
+      background: rgba(0, 0, 0, 0.42);
+      border-left: 4px solid var(--neon-blue);
+      padding: 8px 12px;
+      border-radius: 0 8px 8px 0;
+      flex-shrink: 0;
+    }
+
+    /* MCQ Grid */
+    #options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-content: center;
+    }
+
+    @media (max-aspect-ratio: 1/1) {
+      #options-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .opt-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(0, 240, 255, 0.3);
+      border-radius: 8px;
+      color: #fff;
+      font-size: clamp(13.5px, 1.85vw, 15.5px);
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .opt-btn:hover:not(:disabled) {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--neon-blue);
+      transform: translateY(-1px);
+    }
+
+    .opt-btn.correct {
+      background: rgba(57, 255, 20, 0.22);
+      border-color: var(--neon-green);
+      box-shadow: 0 0 14px rgba(57, 255, 20, 0.45);
+    }
+
+    .opt-btn.wrong {
+      background: rgba(255, 42, 122, 0.2);
+      border-color: var(--neon-pink);
+    }
+
+    .opt-btn:disabled {
+      cursor: default;
+      opacity: 0.85;
+    }
+
+    .opt-letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(0, 240, 255, 0.2);
+      color: var(--neon-blue);
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    /* Fill in the Blank Inputs */
+    .fib-input {
+      background: rgba(0, 0, 0, 0.65);
+      border: 2px solid var(--neon-blue);
+      color: var(--neon-gold);
+      font-size: 15.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      width: 122px;
+      text-align: center;
+      outline: none;
+      margin: 2px 3px;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    .fib-input:focus {
+      box-shadow: 0 0 10px var(--neon-blue);
+    }
+
+    .fib-input.correct {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+    }
+
+    .fib-input.wrong {
+      border-color: var(--neon-pink);
+      color: var(--neon-pink);
+    }
+
+    #fib-submit-btn {
+      padding: 10px 24px;
+      background: var(--neon-blue);
+      color: #030712;
+      font-weight: 900;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+    }
+
+    #fib-submit-btn:hover {
+      filter: brightness(1.15);
+    }
+
+    /* Feedback Box & Next Question Action Row */
+    #feedback-area {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    #feedback-area.show {
+      display: flex;
+    }
+
+    #feedback-box {
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.65);
+      border-left: 4px solid;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    #feedback-box.correct { border-color: var(--neon-green); color: #dcfce7; }
+    #feedback-box.wrong { border-color: var(--neon-pink); color: #ffe4e6; }
+
+    #btn-quiz-continue {
+      display: none;
+      align-self: center;
+      padding: 10px 26px;
+      background: var(--neon-green);
+      color: #041008;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(57, 255, 20, 0.55);
+      transition: 0.15s;
+    }
+
+    #btn-quiz-continue:hover {
+      filter: brightness(1.12);
+      transform: translateY(-1px);
+    }
+
+    /* Arcade Controls */
+    #arcade-controls {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+      justify-content: center;
+    }
+
+    #arcade-controls.active { display: flex; }
+
+    .ctrl-row {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+    }
+
+    .arc-btn {
+      flex: 1;
+      max-width: 240px;
+      height: 76px;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 3px solid;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: 0.08s;
+      touch-action: manipulation;
+    }
+
+    #btn-right {
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.22), #050510);
+      border-color: var(--neon-blue);
+      color: var(--neon-blue);
+    }
+
+    #btn-right:active, #btn-right.holding {
+      background: rgba(0, 240, 255, 0.42);
+      box-shadow: 0 0 22px var(--neon-blue);
+      transform: scale(0.96);
+      color: #fff;
+    }
+
+    #btn-drop {
+      background: radial-gradient(circle, rgba(255, 42, 122, 0.22), #050510);
+      border-color: var(--neon-pink);
+      color: var(--neon-pink);
+    }
+
+    #btn-drop:active {
+      background: rgba(255, 42, 122, 0.42);
+      box-shadow: 0 0 22px var(--neon-pink);
+      transform: scale(0.96);
+      color: #fff;
+    }
+
+    #btn-drop:disabled, #btn-right:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Struggle Minigame Overlay */
+    #struggle-ui {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 4, 12, 0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      padding: 20px;
+    }
+
+    #struggle-ui.active { display: flex; }
+
+    .st-title {
+      color: var(--neon-gold);
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 12px;
+      text-shadow: 0 0 12px var(--neon-gold);
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .st-bar-bg {
+      width: 88%;
+      max-width: 300px;
+      height: 22px;
+      background: #1e1b2e;
+      border: 2px solid #fff;
+      border-radius: 11px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .st-bar-fill {
+      width: 65%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-gold));
+      transition: width 0.06s linear;
+    }
+
+    #btn-tap {
+      width: 114px;
+      height: 114px;
+      border-radius: 57px;
+      background: var(--neon-pink);
+      border: 4px solid #fff;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
+      box-shadow: 0 0 28px var(--neon-pink);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    #btn-tap:active {
+      transform: scale(0.9);
+      background: #fff;
+      color: var(--neon-pink);
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 3, 8, 0.88);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      padding: 16px;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      width: 100%;
+      max-width: 490px;
+      max-height: 92%;
+      overflow-y: auto;
+      background: #0d0b16;
+      border: 2px solid var(--neon-purple);
+      border-radius: 12px;
+      padding: 18px 20px;
+      text-align: center;
+      box-shadow: 0 0 32px rgba(181, 56, 255, 0.45);
+    }
+
+    .m-title {
+      margin: 0 0 8px;
+      font-size: 23px;
+      font-weight: 900;
+      color: var(--neon-blue);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    .m-desc {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .m-btn {
+      padding: 11px 26px;
+      background: var(--neon-purple);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 0.15s;
+      box-shadow: 0 0 15px rgba(181, 56, 255, 0.5);
+      margin-top: 6px;
+    }
+
+    .m-btn:hover {
+      filter: brightness(1.18);
+      transform: translateY(-1px);
+    }
+
+    /* Prize Reveal */
+    .prize-icon-large {
+      font-size: 62px;
+      margin: 8px 0;
+      filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+      animation: float 2s infinite ease-in-out;
+    }
+
+    .prize-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--neon-gold);
+      margin-bottom: 6px;
+    }
+
+    .prize-rarity {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .r-vc { background: #334155; color: #cbd5e1; border: 1px solid #64748b; }
+    .r-c { background: #14532d; color: #86efac; border: 1px solid #22c55e; }
+    .r-uc { background: #1e3a8a; color: #93c5fd; border: 1px solid #38bdf8; }
+    .r-rare { background: #701a75; color: #f5d0fe; border: 1px solid #e879f9; box-shadow: 0 0 10px #d946ef; }
+    .r-leg { background: #78350f; color: #fef08a; border: 1px solid #facc15; box-shadow: 0 0 14px #ffb703; animation: pulseFast 0.9s infinite alternate; }
+
+    /* Display Shelf Grid */
+    #shelf-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .shelf-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid #334155;
+      border-radius: 8px;
+      padding: 8px 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .shelf-item.locked {
+      opacity: 0.42;
+      border-style: dashed;
+    }
+
+    .shelf-icon {
+      font-size: 26px;
+    }
+
+    .shelf-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #e2e8f0;
+      text-align: center;
+      line-height: 1.25;
+    }
+
+    .shelf-qty {
+      font-size: 10px;
+      font-weight: 800;
+      color: #cbd5e1;
+      background: #05040a;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-7px); }
+    }
+
+    @keyframes pulseFast {
+      0% { opacity: 0.82; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1.03); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app-frame">
+  <!-- HUD -->
+  <div id="hud-bar">
+    <div class="hud-group">
+      <span class="hud-badge" id="q-counter">Q: 1/20</span>
+      <span class="hud-badge" style="color:var(--neon-gold); border-color:var(--neon-gold);" id="prize-counter">Prizes: 0</span>
+    </div>
+    <div class="hud-group">
+      <button class="hud-btn" id="btn-shelf">🏆 Shelf (<span id="dex-count">0/25</span>)</button>
+      <button class="hud-btn" id="btn-mute">🔊</button>
+    </div>
+  </div>
+
+  <!-- Arcade Stage Canvas -->
+  <div id="arcade-stage">
+    <canvas id="arcade-canvas" width="420" height="260"></canvas>
+    <div id="mystery-banner">🎁 15 Mystery Gachapon Capsules — Colours are random!</div>
+    <div id="arcade-timer">10.0</div>
+  </div>
+
+  <!-- Bottom Interactive Area -->
+  <div id="bottom-deck">
+    <!-- Quiz UI -->
+    <div id="quiz-container">
+      <div class="q-header">
+        <span id="q-type-label">Past Tense & Grammar</span>
+        <span class="diff-badge diff-1" id="q-diff-label">Level: Easy</span>
+      </div>
+      <div id="question-text">Loading...</div>
+
+      <!-- MCQ Grid -->
+      <div id="options-grid"></div>
+
+      <!-- Fill-in-the-Blank Submit Area -->
+      <div id="fib-container" style="display:none; flex-direction:column; gap:8px; align-items:center; margin:auto 0;">
+        <div style="font-size:12px; color:var(--text-muted);">Type the correct verb form(s) in the boxes above:</div>
+        <button id="fib-submit-btn">SUBMIT ANSWER</button>
+      </div>
+
+      <!-- Explanation + Next Question Button -->
+      <div id="feedback-area">
+        <div id="feedback-box"></div>
+        <button id="btn-quiz-continue">Next Question ➔</button>
+      </div>
+    </div>
+
+    <!-- Arcade Controls -->
+    <div id="arcade-controls">
+      <div style="text-align:center; font-size:13.5px; font-weight:700; color:var(--neon-blue);">
+        UFO CLAW POWERED UP! Pick any capsule — 1 grab chance!
+      </div>
+      <div class="ctrl-row">
+        <button class="arc-btn" id="btn-right">➔ HOLD RIGHT</button>
+        <button class="arc-btn" id="btn-drop">⬇ DROP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heavy Capsule Struggle Overlay -->
+  <div id="struggle-ui">
+    <div class="st-title">HEAVY CAPSULE WOBBLING!<br>TAP RAPIDLY TO HOLD GRIP!</div>
+    <div class="st-bar-bg"><div class="st-bar-fill" id="st-bar-fill"></div></div>
+    <button id="btn-tap">TAP!</button>
+  </div>
+
+  <!-- Start Modal -->
+  <div class="modal-overlay open" id="start-modal">
+    <div class="modal-box">
+      <div class="m-title">UFO CLAW ARCADE</div>
+      <div style="color:var(--neon-pink); font-weight:800; font-size:17px; margin-bottom:12px;">Grammar Grabber</div>
+      <div class="m-desc">
+        🛸 <b>How to Play:</b><br><br>
+        1. Answer each Past Tense question correctly to power up the UFO Claw for <b>10 seconds</b>.<br>
+        2. Choose from <b>15 stationary gachapon capsules</b>! Hold <b>➔ RIGHT</b> to line up the UFO claw, then tap <b>⬇ DROP</b> (1 chance per question).<br>
+        3. Capsule colours are pure mystery surprises—<b>Hard questions</b> pack the machine with much higher odds for <b>Rare & Legendary</b> prizes (Tesla Cybertrucks, Spaceships, 100 Diamonds & Pure Gold)!<br>
+        4. Heavy Rare/Legendary capsules wobble on the way up—<b>tap rapidly</b> so they don't slip!
+      </div>
+      <button class="m-btn" id="btn-start-game">INSERT COIN ➔ PLAY</button>
+    </div>
+  </div>
+
+  <!-- Prize Reveal Modal -->
+  <div class="modal-overlay" id="reveal-modal">
+    <div class="modal-box">
+      <div class="m-title">CAPSULE OPENED!</div>
+      <div class="prize-icon-large" id="rev-icon">🎁</div>
+      <div class="prize-name" id="rev-name">Item Name</div>
+      <div class="prize-rarity r-c" id="rev-rarity">COMMON</div>
+      <div>
+        <button class="m-btn" id="btn-next-q">Next Question ➔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missed / Slipped Modal -->
+  <div class="modal-overlay" id="miss-modal">
+    <div class="modal-box">
+      <div class="m-title" style="color:var(--neon-pink);" id="miss-title">CLAW CAME BACK EMPTY!</div>
+      <div class="m-desc" id="miss-desc" style="text-align:center; font-size:15px;">
+        Only 1 grab chance per question!<br>Keep answering to power up the UFO claw again.
+      </div>
+      <button class="m-btn" id="btn-miss-next">Next Question ➔</button>
+    </div>
+  </div>
+
+  <!-- Display Shelf Modal -->
+  <div class="modal-overlay" id="shelf-modal">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="m-title">🏆 PRIZE DISPLAY SHELF</div>
+      <div style="font-size:12.5px; color:var(--text-muted);" id="shelf-subtitle">Unlocked 0 / 25 Prizes</div>
+      <div id="shelf-grid"></div>
+      <button class="m-btn" id="btn-close-shelf" style="margin-top:16px;">Close</button>
+    </div>
+  </div>
+
+  <!-- End Game Modal -->
+  <div class="modal-overlay" id="end-modal">
+    <div class="modal-box">
+      <div class="m-title">ARCADE SESSION COMPLETE!</div>
+      <div class="m-desc" id="end-summary" style="text-align:center; font-size:15.5px; margin-bottom:16px;"></div>
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="hud-btn" id="btn-end-shelf" style="padding:10px 18px; font-size:14px;">🏆 View Shelf</button>
+        <button class="m-btn" id="btn-restart" style="margin-top:0;">Play Again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ==========================================
+  // 1. QUESTIONS (20 Questions: 15 MCQ + 5 FIB)
+  // ==========================================
+  const RAW_QUESTIONS = [
+    // Level 1: Easy (MCQ)
+    { t: 'mcq', q: '1. Peter ______ camping with his classmates last week.', o: ['go', 'goes', 'went', 'going'], a: 2, exp: 'C. went — "Last week" indicates the simple past tense. Go is an irregular verb whose past form is went.', diff: 1 },
+    { t: 'mcq', q: '2. Miss Law ______ very busy last week, so she could not join the party.', o: ['is', 'was', 'were', 'be'], a: 1, exp: 'B. was — "Last week" requires the simple past tense. Since Miss Law is singular, we use was.', diff: 1 },
+    { t: 'mcq', q: '3. There ______ a lot of tall buildings in Hong Kong in 2009.', o: ['was', 'were', 'is', 'are'], a: 1, exp: 'B. were — "In 2009" is in the past, and "a lot of tall buildings" is plural, so we use There were.', diff: 1 },
+    { t: 'mcq', q: '4. We ______ hungry yesterday, so we ate two big bowls of noodles.', o: ['was', 'are', 'were', 'had'], a: 2, exp: 'C. were — "Yesterday" is in the past, and We is plural, so the past form of be is were.', diff: 1 },
+    { t: 'mcq', q: '5. There ______ an airport on the small island 30 years ago, so nobody could travel there by plane.', o: ['was', 'wasn’t', 'weren’t', 'aren’t'], a: 1, exp: 'B. wasn’t — An airport is singular, and "nobody could travel there by plane" shows it did not exist 30 years ago.', diff: 1 },
+
+    // Level 2: Medium (MCQ)
+    { t: 'mcq', q: '6. Ben ______ his wallet on the street an hour ago.', o: ['droped', 'dropped', 'drops', 'dropping'], a: 1, exp: 'B. dropped — Drop ends in a single short vowel + consonant (o + p), so double the final consonant before adding -ed.', diff: 2 },
+    { t: 'mcq', q: '7. The baby ______ loudly last night because she was hungry.', o: ['cryed', 'cried', 'cries', 'crying'], a: 1, exp: 'B. cried — Cry ends in a consonant + -y, so change -y to -i and add -ed (cried).', diff: 2 },
+    { t: 'mcq', q: '8. There ______ any pandas in Hong Kong 30 years ago.', o: ['wasn’t', 'weren’t', 'wasn’t a', 'weren’t a'], a: 1, exp: 'B. weren’t — Pandas is plural and paired with "any", so the negative past form is There weren’t.', diff: 2 },
+    { t: 'mcq', q: '9. A: Were there any school buses 40 years ago? B: No, ______.', o: ['there wasn’t', 'there weren’t', 'they weren’t', 'there didn’t'], a: 1, exp: 'B. there weren’t — Questions starting with "Were there...?" are answered negatively with "No, there weren’t."', diff: 2 },
+    { t: 'mcq', q: '10. When Grandma was young, nobody in her family ______ electronic games.', o: ['play', 'plays', 'played', 'playing'], a: 2, exp: 'C. played — "When Grandma was young" refers to the past, so we use the simple past form played.', diff: 2 },
+
+    // Level 3: Hard (MCQ)
+    { t: 'mcq', q: '11. A: Did Polly ______ the piano exam last Saturday? B: No, she didn’t.', o: ['has', 'had', 'have', 'having'], a: 2, exp: 'C. have — Never change the main verb into the past tense after "did"; always use the base form (have).', diff: 3 },
+    { t: 'mcq', q: '12. I ______ a doll yesterday. I bought a robot instead.', o: ['didn’t bought', 'didn’t buy', 'wasn’t buy', 'don’t bought'], a: 1, exp: 'B. didn’t buy — Never change the main verb into the past tense after "didn’t"; always use the base form (buy).', diff: 3 },
+    { t: 'mcq', q: '13. Last month, Teddy ______ to Beijing. Now he ______ some photos from the trip to show Ivan.', o: ['goes / had', 'went / has', 'went / had', 'go / has'], a: 1, exp: 'B. went / has — "Last month" takes simple past (went), while "Now" describes the present situation (has).', diff: 3 },
+    { t: 'mcq', q: '14. Which sentence is CORRECT?', o: ['There had a fun fair in the park yesterday.', 'Did you went to the cinema last night?', 'There were not any spaceships 50 years ago.', 'There wasn’t any tall buildings 60 years ago.'], a: 2, exp: 'C. There were not any spaceships 50 years ago. — Plural "spaceships" takes "There were not any".', diff: 3 },
+    { t: 'mcq', q: '15. Which sentence is CORRECT?', o: ['No, I didn’t went to Sam’s party yesterday.', 'We chatted and danced around the campfire last night.', 'Was there any cable cars 80 years ago?', 'Everybody in my class have a mobile phone when I was young.'], a: 1, exp: 'B. We chatted and danced around the campfire last night. — Chat doubles the t (chatted) and dance adds -d (danced).', diff: 3 },
+
+    // Part 2: Fill in the Blanks
+    { t: 'fib', q: '16. Nancy {picked} (pick) some flowers in the garden last Sunday.', ans: [['picked']], exp: 'picked — Regular verb + -ed for a completed past action ("last Sunday").', diff: 1 },
+    { t: 'fib', q: '17. There {were not|weren\'t|weren’t} (not be) any tall buildings in this village 60 years ago.', ans: [['were not', 'weren\'t', 'weren’t']], exp: 'were not / weren’t — "60 years ago" is past, and "any tall buildings" is plural.', diff: 2 },
+    { t: 'fib', q: '18. Yesterday afternoon, we {chatted} (chat) happily and {tried} (try) some delicious dumplings.', ans: [['chatted'], ['tried']], exp: 'chatted / tried — Chat doubles the final consonant (t) before -ed; try changes -y to -i before -ed.', diff: 2 },
+    { t: 'fib', q: '19. A: {Did} you {buy} (buy) a toy car yesterday?\nB: No, I {did not buy|didn\'t buy|didn’t buy} (not buy) a toy car. I bought a book.', ans: [['did'], ['buy'], ['did not buy', 'didn\'t buy', 'didn’t buy']], exp: 'Did / buy / didn’t buy — Keep the main verb in its base form (buy) after Did and didn’t.', diff: 3 },
+    { t: 'fib', q: '20. Last winter, I {went} (go) to Beijing and {ate} (eat) Peking duck. It {was} (be) great! Now I {like} (like) Chinese food very much.', ans: [['went'], ['ate'], ['was'], ['like']], exp: 'went / ate / was / like — First three blanks describe a past trip ("Last winter"); "Now" takes simple present (like).', diff: 3 }
+  ];
+
+  // ==========================================
+  // 2. PRIZES & DECORATIVE GACHAPON SHELL PALETTES (ALL ENGLISH)
+  // ==========================================
+  const PRIZES = {
+    vc: [
+      { id: 'boot', n: 'Old Smelly Boot', e: '🥾' },
+      { id: 'can', n: 'Rusty Tin Can', e: '🥫' },
+      { id: 'peel', n: 'Slippery Banana Peel', e: '🍌' },
+      { id: 'sock', n: 'Single Odd Sock', e: '🧦' },
+      { id: 'paper', n: 'Crumpled Paper Ball', e: '🗞️' }
+    ],
+    c: [
+      { id: 'pencil', n: 'HB Pencil', e: '✏️' },
+      { id: 'eraser', n: 'Soft Eraser', e: '🧽' },
+      { id: 'notebook', n: 'Spiral Notebook', e: '📓' },
+      { id: 'ruler', n: '15cm Ruler', e: '📏' },
+      { id: 'scissors', n: 'Safety Scissors', e: '✂️' }
+    ],
+    uc: [
+      { id: 'cpn20', n: '20% Off Coupon', e: '🎟️' },
+      { id: 'movie', n: 'IMAX Movie Ticket', e: '🎫' },
+      { id: 'ice', n: 'Free Sundae Voucher', e: '🍨' },
+      { id: 'burger', n: 'Double Burger Pass', e: '🍔' },
+      { id: 'park', n: 'Theme Park FastPass', e: '🎡' }
+    ],
+    r: [
+      { id: 'goldbar', n: '24K Gold Bullion', e: '💰' },
+      { id: 'gem', n: 'Royal Sapphire', e: '💠' },
+      { id: 'sportscar', n: 'Turbo Supercar', e: '🏎️' },
+      { id: 'crown', n: 'Emperor Crown', e: '👑' },
+      { id: 'robot', n: 'AI Butler Robot', e: '🤖' }
+    ],
+    l: [
+      { id: 'cybertruck', n: 'Tesla Cybertruck', e: '🛻' },
+      { id: 'spaceship', n: 'Interstellar Spaceship', e: '🛸' },
+      { id: 'diamonds100', n: '100 Pieces of Diamonds', e: '💎' },
+      { id: 'goldpile', n: 'Mountain of Pure Gold', e: '🏆' },
+      { id: 'island', n: 'Private Tropical Island', e: '🏝️' }
+    ]
+  };
+
+  // Pretty pastel & candy Gachapon shell colors (completely independent of prize rarity!)
+  const CAPSULE_SHELLS = [
+    { light: '#ffc2d9', main: '#ff5c93', dark: '#b81d58', toy: '#ff85b3' }, // Sakura Pink
+    { light: '#bae6fd', main: '#38bdf8', dark: '#0369a1', toy: '#7dd3fc' }, // Sky Cyan
+    { light: '#a7f3d0', main: '#10b981', dark: '#047857', toy: '#6ee7b7' }, // Mint Emerald
+    { light: '#e9d5ff', main: '#a855f7', dark: '#6b21a8', toy: '#d8b4fe' }, // Lavender Purple
+    { light: '#fef08a', main: '#eab308', dark: '#a16207', toy: '#fde047' }, // Sunny Lemon
+    { light: '#fed7aa', main: '#f97316', dark: '#c2410c', toy: '#fdba74' }, // Tangerine Coral
+    { light: '#99f6e4', main: '#14b8a6', dark: '#0f766e', toy: '#5eead4' }, // Aqua Turquoise
+    { light: '#fbcfe8', main: '#ec4899', dark: '#9d174d', toy: '#f472b6' }  // Bubblegum Rose
+  ];
+
+  const RARITY_META = {
+    vc: { badge: 'r-vc',   label: 'VERY COMMON (Niche / Rubbish)', border: '#64748b' },
+    c:  { badge: 'r-c',    label: 'COMMON (Stationery / Essentials)', border: '#22c55e' },
+    uc: { badge: 'r-uc',   label: 'UNCOMMON (Coupons & Treats)', border: '#38bdf8' },
+    r:  { badge: 'r-rare', label: 'RARE (Luxury Treasure)', border: '#e879f9' },
+    l:  { badge: 'r-leg',  label: 'LEGENDARY (Absurd Mega-Prize!)', border: '#facc15' }
+  };
+
+  // ==========================================
+  // 3. SYNTHESIZED ARCADE AUDIO
+  // ==========================================
+  class Sfx {
+    constructor() { this.ctx = null; this.muted = false; }
+    init() {
+      if (!this.ctx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) this.ctx = new Ctx();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    }
+    play(freq, type, dur, vol = 0.1, delay = 0) {
+      if (this.muted || !this.ctx) return;
+      const t = this.ctx.currentTime + delay;
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g);
+      g.connect(this.ctx.destination);
+      o.start(t);
+      o.stop(t + dur);
+    }
+    right() {
+      this.play(523.25, 'square', 0.1, 0.08, 0);
+      this.play(659.25, 'square', 0.1, 0.08, 0.09);
+      this.play(783.99, 'square', 0.18, 0.1, 0.18);
+    }
+    wrong() {
+      this.play(190, 'sawtooth', 0.15, 0.1, 0);
+      this.play(140, 'sawtooth', 0.22, 0.1, 0.13);
+    }
+    motor() {
+      this.play(165, 'triangle', 0.04, 0.025, 0);
+    }
+    drop() {
+      this.play(440, 'sine', 0.25, 0.07, 0);
+      this.play(310, 'sine', 0.25, 0.07, 0.1);
+    }
+    grab() {
+      this.play(740, 'square', 0.09, 0.08, 0);
+      this.play(987, 'square', 0.14, 0.09, 0.08);
+    }
+    struggle() {
+      this.play(260 + Math.random() * 120, 'square', 0.06, 0.08, 0);
+    }
+    win(isLeg) {
+      const notes = isLeg ? [523, 659, 783, 1046, 1318] : [523, 659, 783, 1046];
+      notes.forEach((f, i) => this.play(f, 'square', 0.15, 0.1, i * 0.09));
+    }
+    slip() {
+      this.play(350, 'triangle', 0.15, 0.1, 0);
+      this.play(220, 'triangle', 0.25, 0.1, 0.14);
+    }
+  }
+  const sfx = new Sfx();
+
+  // ==========================================
+  // 4. GAME STATE & STATIONARY GACHAPON PIT
+  // ==========================================
+  const CW = 420, CH = 260;
+  const CHUTE_X = 42;
+
+  let state = {
+    deck: [],
+    qIdx: 0,
+    inventory: {},
+    totalPrizes: 0,
+    phase: 'QUIZ', // QUIZ | ARCADE | STRUGGLING | REVEAL | MISS | TRANSITION | END
+    arcTimeLeft: 10.0,
+    capsules: [],
+    grabbedCap: null,
+    fallingCap: null
+  };
+
+  let claw = {
+    x: CHUTE_X,
+    y: 36,
+    state: 'IDLE', // IDLE | MOVING | DROPPING | STRUGGLING | RETURNING
+    speed: 138,
+    dropSpeed: 205,
+    retSpeed: 120
+  };
+
+  let inputHoldRight = false;
+  let motorTick = 0;
+  let lastTime = performance.now();
+  let struggleData = { hp: 65, timer: 3.2 };
+
+  function pickPrizeForRarity(rar) {
+    const list = PRIZES[rar];
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  // Generate 15 STATIONARY Gachapon capsules in a neat 2-tier mound
+  function populateCapsulePit(diff) {
+    // Hidden rarity distribution scaled by question difficulty (1=Easy, 2=Medium, 3=Hard)
+    let rarityPool = [];
+    if (diff === 1) {
+      // Easy: Mostly Very Common & Common, 2 Uncommon, 1 Rare
+      rarityPool = ['vc','vc','vc','vc','vc','vc', 'c','c','c','c','c','c', 'uc','uc', 'r'];
+    } else if (diff === 2) {
+      // Medium: Balanced Common/Uncommon, 3 Rare, 1 Legendary
+      rarityPool = ['vc','vc', 'c','c','c','c', 'uc','uc','uc','uc','uc', 'r','r','r', 'l'];
+    } else {
+      // Hard: High reward odds! 5 Rare & 4 Legendary!
+      rarityPool = ['vc', 'c','c', 'uc','uc','uc', 'r','r','r','r','r', 'l','l','l','l'];
+    }
+
+    // Shuffle hidden rarities across the 15 pit positions
+    for (let i = rarityPool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rarityPool[i], rarityPool[j]] = [rarityPool[j], rarityPool[i]];
+    }
+
+    const caps = [];
+    let idx = 0;
+
+    // Bottom row: 8 stationary capsules (x = 96 to 383, y = 213)
+    for (let i = 0; i < 8; i++) {
+      const rar = rarityPool[idx++];
+      const shell = CAPSULE_SHELLS[Math.floor(Math.random() * CAPSULE_SHELLS.length)];
+      caps.push({
+        id: idx,
+        layer: 0,
+        x: 96 + i * 41,
+        y: 213,
+        r: 17,
+        shell,
+        rarity: rar,
+        prize: pickPrizeForRarity(rar)
+      });
+    }
+
+    // Top row: 7 stationary capsules nestled neatly between bottom capsules (x = 116 to 362, y = 186)
+    for (let i = 0; i < 7; i++) {
+      const rar = rarityPool[idx++];
+      const shell = CAPSULE_SHELLS[Math.floor(Math.random() * CAPSULE_SHELLS.length)];
+      caps.push({
+        id: idx,
+        layer: 1,
+        x: 116 + i * 41,
+        y: 186,
+        r: 17,
+        shell,
+        rarity: rar,
+        prize: pickPrizeForRarity(rar)
+      });
+    }
+
+    state.capsules = caps;
+    state.grabbedCap = null;
+    state.fallingCap = null;
+  }
+
+  function resetClawForTurn(diff) {
+    claw.x = CHUTE_X;
+    claw.y = 36;
+    claw.state = 'IDLE';
+    inputHoldRight = false;
+    document.getElementById('btn-right').classList.remove('holding');
+    document.getElementById('btn-right').disabled = false;
+    document.getElementById('btn-drop').disabled = false;
+
+    populateCapsulePit(diff);
+    state.arcTimeLeft = 10.0;
+    const timerEl = document.getElementById('arcade-timer');
+    timerEl.textContent = '10.0';
+    timerEl.style.display = 'block';
+  }
+
+  // ==========================================
+  // 5. GLOSSY GACHAPON CAPSULE & UFO RENDERER
+  // ==========================================
+  const cvs = document.getElementById('arcade-canvas');
+  const ctx = cvs.getContext('2d');
+
+  function drawNiceCapsule(c) {
+    const { x, y, r, shell } = c;
+    ctx.save();
+
+    // 1. Soft 3D drop shadow beneath capsule
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.52)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + r - 1, r * 0.85, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Bottom Colored Shell Hemisphere with 3D Radial Shading
+    const botGrad = ctx.createRadialGradient(x - r * 0.35, y + r * 0.15, 2, x, y + r * 0.25, r * 1.15);
+    botGrad.addColorStop(0, shell.light);
+    botGrad.addColorStop(0.55, shell.main);
+    botGrad.addColorStop(1, shell.dark);
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI, false);
+    ctx.fillStyle = botGrad;
+    ctx.fill();
+
+    // 3. Top Clear Frosted Acrylic Dome
+    const topGrad = ctx.createRadialGradient(x - r * 0.3, y - r * 0.45, 2, x, y - r * 0.1, r * 1.1);
+    topGrad.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
+    topGrad.addColorStop(0.65, 'rgba(226, 232, 240, 0.82)');
+    topGrad.addColorStop(1, 'rgba(148, 163, 184, 0.72)');
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI, true);
+    ctx.fillStyle = topGrad;
+    ctx.fill();
+
+    // 4. Cute Mystery Toy / Star Silhouette inside the Clear Top Dome
+    ctx.fillStyle = shell.toy;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.arc(x, y - 5.5, 5.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // 5. Outer Crisp Rim Outline
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 6. Metallic Equator Locking Band + Center Clasp
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(x - r + 0.5, y - 1.6, (r - 0.5) * 2, 3.2);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - r + 0.5, y - 1.6, (r - 0.5) * 2, 3.2);
+
+    // Center capsule button/clasp
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 7. Glossy Acrylic Specular Reflection Arc + Sparkle Dot
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(x, y, r - 4.2, Math.PI * 1.15, Math.PI * 1.48);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x + 4.5, y - 9.5, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawArcade(dt) {
+    // 1. Arcade Cabinet Backdrop
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
+    bgGrad.addColorStop(0, '#070612');
+    bgGrad.addColorStop(1, '#120d24');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, CW, CH);
+
+    // Subtle neon grid lines
+    ctx.strokeStyle = 'rgba(181, 56, 255, 0.08)';
+    ctx.lineWidth = 1;
+    for (let gx = 0; gx < CW; gx += 30) {
+      ctx.beginPath(); ctx.moveTo(gx, 22); ctx.lineTo(gx, 232); ctx.stroke();
+    }
+    for (let gy = 30; gy < 232; gy += 30) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CW, gy); ctx.stroke();
+    }
+
+    // 2. Top Gantry Rail
+    ctx.fillStyle = '#1e1b2e';
+    ctx.fillRect(0, 12, CW, 10);
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillRect(0, 16, CW, 2);
+
+    // 3. Prize Drop Chute (Bottom-Left)
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.08)';
+    ctx.fillRect(10, 178, 64, 54);
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(10, 178, 64, 54);
+
+    ctx.fillStyle = '#00f0ff';
+    ctx.font = 'bold 9.5px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PRIZE', 42, 202);
+    ctx.fillText('CHUTE', 42, 214);
+
+    // 4. Floor Bar
+    ctx.fillStyle = 'rgba(255, 42, 122, 0.16)';
+    ctx.fillRect(0, 232, CW, 28);
+    ctx.strokeStyle = '#ff2a7a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 232);
+    ctx.lineTo(CW, 232);
+    ctx.stroke();
+
+    // 5. Draw Stationary Pit Capsules (Bottom row first, then Top row)
+    state.capsules
+      .filter(c => c.layer === 0)
+      .forEach(c => drawNiceCapsule(c));
+    state.capsules
+      .filter(c => c.layer === 1)
+      .forEach(c => drawNiceCapsule(c));
+
+    // 6. Update Claw Movement & Collision
+    if (claw.state === 'MOVING') {
+      claw.x += claw.speed * dt;
+      if (claw.x > CW - 26) claw.x = CW - 26;
+      motorTick += dt;
+      if (motorTick >= 0.09) {
+        motorTick = 0;
+        sfx.motor();
+      }
+    } else if (claw.state === 'DROPPING') {
+      claw.y += claw.dropSpeed * dt;
+
+      // Check collision against top-layer capsules first, then bottom-layer
+      let hitCap = null;
+      const orderedCaps = [
+        ...state.capsules.filter(c => c.layer === 1),
+        ...state.capsules.filter(c => c.layer === 0)
+      ];
+
+      for (const c of orderedCaps) {
+        const grabTriggerY = c.y - 23;
+        if (claw.y >= grabTriggerY && Math.abs(claw.x - c.x) <= 18) {
+          hitCap = c;
+          break;
+        }
+      }
+
+      if (hitCap) {
+        state.capsules = state.capsules.filter(item => item.id !== hitCap.id);
+        state.grabbedCap = hitCap;
+        sfx.grab();
+
+        if (hitCap.rarity === 'r' || hitCap.rarity === 'l') {
+          claw.state = 'STRUGGLING';
+          startStruggle(hitCap.rarity);
+        } else {
+          claw.state = 'RETURNING';
+        }
+      } else if (claw.y >= 198) {
+        claw.y = 198;
+        state.grabbedCap = null;
+        claw.state = 'RETURNING';
+      }
+    } else if (claw.state === 'RETURNING') {
+      if (claw.y > 36) {
+        claw.y -= claw.retSpeed * dt;
+        if (claw.y < 36) claw.y = 36;
+      } else if (claw.x > CHUTE_X) {
+        claw.x -= (claw.retSpeed * 1.4) * dt;
+        if (claw.x < CHUTE_X) claw.x = CHUTE_X;
+      } else {
+        endArcadeCycle();
+      }
+    }
+
+    // 7. Draw Grabbed Capsule inside UFO Prongs
+    if (state.grabbedCap) {
+      const wobbleX = (claw.state === 'STRUGGLING') ? (Math.random() - 0.5) * 9 : 0;
+      const wobbleY = (claw.state === 'STRUGGLING') ? (Math.random() - 0.5) * 6 : 0;
+      state.grabbedCap.x = claw.x + wobbleX;
+      state.grabbedCap.y = claw.y + 24 + wobbleY;
+      drawNiceCapsule(state.grabbedCap);
+    }
+
+    // Draw Slipped Capsule falling down
+    if (state.fallingCap) {
+      state.fallingCap.y += 280 * dt;
+      drawNiceCapsule(state.fallingCap);
+      if (state.fallingCap.y > CH + 25) {
+        state.fallingCap = null;
+      }
+    }
+
+    // 8. Draw UFO Claw Cable, Saucer Head & Prongs
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(claw.x, 17);
+    ctx.lineTo(claw.x, claw.y - 6);
+    ctx.stroke();
+
+    // UFO Glass Dome
+    ctx.fillStyle = (claw.state === 'STRUGGLING') ? 'rgba(255, 183, 3, 0.7)' : 'rgba(0, 240, 255, 0.65)';
+    ctx.beginPath();
+    ctx.arc(claw.x, claw.y - 5, 9, Math.PI, 0);
+    ctx.fill();
+
+    // UFO Metallic Saucer Rim
+    ctx.fillStyle = '#e2e8f0';
+    ctx.beginPath();
+    ctx.ellipse(claw.x, claw.y - 4, 15, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Blinking UFO lights
+    ctx.fillStyle = (claw.state === 'STRUGGLING') ? '#ff2a7a' : '#00f0ff';
+    [-8, 0, 8].forEach(dx => {
+      ctx.beginPath();
+      ctx.arc(claw.x + dx, claw.y - 4, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Articulated Prongs
+    const isOpen = (claw.state === 'IDLE' || claw.state === 'MOVING' || claw.state === 'DROPPING') && !state.grabbedCap;
+    const prongAngle = isOpen ? 0.58 : 0.16;
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = 'round';
+
+    ctx.save();
+    ctx.translate(claw.x - 9, claw.y + 1);
+    ctx.rotate(prongAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-2, 16);
+    ctx.lineTo(8, 23);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(claw.x + 9, claw.y + 1);
+    ctx.rotate(-prongAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(2, 16);
+    ctx.lineTo(-8, 23);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function loop(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    if (state.phase === 'ARCADE' || state.phase === 'STRUGGLING') {
+      if (state.phase === 'ARCADE' && (claw.state === 'IDLE' || claw.state === 'MOVING')) {
+        state.arcTimeLeft -= dt;
+        if (state.arcTimeLeft <= 0) {
+          state.arcTimeLeft = 0;
+          triggerDrop();
+        }
+        document.getElementById('arcade-timer').textContent = state.arcTimeLeft.toFixed(1);
+      }
+
+      if (state.phase === 'STRUGGLING' && state.grabbedCap) {
+        struggleData.timer -= dt;
+        const drainRate = (state.grabbedCap.rarity === 'l') ? 54 : 38;
+        struggleData.hp -= drainRate * dt;
+        if (struggleData.hp > 100) struggleData.hp = 100;
+        document.getElementById('st-bar-fill').style.width = `${Math.max(0, struggleData.hp)}%`;
+
+        if (struggleData.hp <= 0) {
+          document.getElementById('struggle-ui').classList.remove('active');
+          sfx.slip();
+          state.fallingCap = state.grabbedCap;
+          state.grabbedCap = null;
+          state.phase = 'ARCADE';
+          claw.state = 'RETURNING';
+        } else if (struggleData.timer <= 0) {
+          document.getElementById('struggle-ui').classList.remove('active');
+          state.phase = 'ARCADE';
+          claw.state = 'RETURNING';
+        }
+      }
+    }
+
+    drawArcade(dt);
+    requestAnimationFrame(loop);
+  }
+
+  // ==========================================
+  // 6. QUIZ & ARCADE FLOW
+  // ==========================================
+  function updateHUD() {
+    document.getElementById('q-counter').textContent = `Q: ${Math.min(state.qIdx + 1, state.deck.length)}/${state.deck.length}`;
+    document.getElementById('prize-counter').textContent = `Prizes: ${state.totalPrizes}`;
+    const unlockedCount = Object.keys(state.inventory).length;
+    document.getElementById('dex-count').textContent = `${unlockedCount}/25`;
+  }
+
+  function advanceToNextQuestion() {
+    if (state.phase === 'TRANSITION') return;
+    state.phase = 'TRANSITION';
+
+    document.getElementById('reveal-modal').classList.remove('open');
+    document.getElementById('miss-modal').classList.remove('open');
+    document.getElementById('struggle-ui').classList.remove('active');
+
+    state.qIdx++;
+    loadQuestion();
+  }
+
+  function initGame() {
+    sfx.init();
+    state.deck = [...RAW_QUESTIONS].sort(() => Math.random() - 0.5);
+    state.qIdx = 0;
+    state.inventory = {};
+    state.totalPrizes = 0;
+    updateHUD();
+
+    document.getElementById('start-modal').classList.remove('open');
+    document.getElementById('end-modal').classList.remove('open');
+    document.getElementById('reveal-modal').classList.remove('open');
+    document.getElementById('miss-modal').classList.remove('open');
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    if (state.qIdx >= state.deck.length) {
+      showEnd();
+      return;
+    }
+
+    state.phase = 'QUIZ';
+    claw.x = CHUTE_X;
+    claw.y = 36;
+    claw.state = 'IDLE';
+
+    const q = state.deck[state.qIdx];
+    populateCapsulePit(q.diff);
+    updateHUD();
+
+    const diffEl = document.getElementById('q-diff-label');
+    diffEl.className = `diff-badge diff-${q.diff}`;
+    diffEl.textContent = q.diff === 1 ? 'Level: Easy' : q.diff === 2 ? 'Level: Medium' : 'Level: Hard (High Rare Odds!)';
+
+    document.getElementById('arcade-controls').classList.remove('active');
+    document.getElementById('arcade-timer').style.display = 'none';
+    document.getElementById('quiz-container').style.display = 'flex';
+
+    const fbArea = document.getElementById('feedback-area');
+    const fbBox = document.getElementById('feedback-box');
+    const contBtn = document.getElementById('btn-quiz-continue');
+    fbArea.classList.remove('show');
+    fbBox.classList.remove('correct', 'wrong');
+    contBtn.style.display = 'none';
+
+    if (q.t === 'mcq') {
+      document.getElementById('options-grid').style.display = 'grid';
+      document.getElementById('fib-container').style.display = 'none';
+      document.getElementById('question-text').innerHTML = q.q;
+
+      const grid = document.getElementById('options-grid');
+      grid.innerHTML = '';
+      q.o.forEach((optText, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'opt-btn';
+        btn.innerHTML = `<span class="opt-letter">${['A', 'B', 'C', 'D'][i]}</span><span>${optText}</span>`;
+        btn.addEventListener('click', () => handleAnswer(i === q.a, btn));
+        grid.appendChild(btn);
+      });
+    } else {
+      document.getElementById('options-grid').style.display = 'none';
+      document.getElementById('fib-container').style.display = 'flex';
+      const submitBtn = document.getElementById('fib-submit-btn');
+      submitBtn.style.display = 'inline-block';
+      submitBtn.onclick = checkFib;
+
+      const parts = q.q.split(/\{([^}]+)\}/g);
+      let html = '';
+      let inputIdx = 0;
+      parts.forEach((p, i) => {
+        if (i % 2 === 0) {
+          html += p.replace(/\n/g, '<br>');
+        } else {
+          html += `<input type="text" class="fib-input" data-idx="${inputIdx}" autocomplete="off" spellcheck="false">`;
+          inputIdx++;
+        }
+      });
+      document.getElementById('question-text').innerHTML = html;
+
+      const inputs = document.querySelectorAll('.fib-input');
+      inputs.forEach((inp, idx) => {
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            if (idx < inputs.length - 1) inputs[idx + 1].focus();
+            else checkFib();
+          }
+        });
+      });
+      if (inputs.length > 0) inputs[0].focus();
+    }
+
+    document.getElementById('bottom-deck').scrollTop = 0;
+  }
+
+  function checkFib() {
+    if (state.phase !== 'QUIZ') return;
+    const q = state.deck[state.qIdx];
+    const inputs = document.querySelectorAll('.fib-input');
+    let allRight = true;
+
+    inputs.forEach(inp => {
+      const val = inp.value.trim().toLowerCase().replace(/’/g, "'");
+      const idx = parseInt(inp.getAttribute('data-idx'), 10);
+      const valids = q.ans[idx].map(a => a.toLowerCase().replace(/’/g, "'"));
+      if (valids.includes(val)) {
+        inp.classList.add('correct');
+      } else {
+        inp.classList.add('wrong');
+        allRight = false;
+      }
+      inp.disabled = true;
+    });
+
+    document.getElementById('fib-submit-btn').style.display = 'none';
+    handleAnswer(allRight, null);
+  }
+
+  function handleAnswer(isCorrect, btn) {
+    if (state.phase !== 'QUIZ') return;
+    sfx.init();
+    const q = state.deck[state.qIdx];
+    const fbArea = document.getElementById('feedback-area');
+    const fbBox = document.getElementById('feedback-box');
+    const contBtn = document.getElementById('btn-quiz-continue');
+
+    fbBox.innerHTML = `<b>${isCorrect ? '✅ Correct!' : '❌ Not quite!'}</b> ${q.exp}`;
+    fbArea.classList.add('show');
+
+    if (btn) {
+      document.querySelectorAll('.opt-btn').forEach(b => (b.disabled = true));
+      if (isCorrect) btn.classList.add('correct');
+      else btn.classList.add('wrong');
+    }
+
+    if (isCorrect) {
+      state.phase = 'QUIZ_LOCKED';
+      sfx.right();
+      fbBox.classList.add('correct');
+      setTimeout(() => {
+        document.getElementById('quiz-container').style.display = 'none';
+        document.getElementById('arcade-controls').classList.add('active');
+        state.phase = 'ARCADE';
+        resetClawForTurn(q.diff);
+      }, 1300);
+    } else {
+      state.phase = 'QUIZ_REVIEW';
+      sfx.wrong();
+      fbBox.classList.add('wrong');
+      contBtn.style.display = 'inline-block';
+      const deckEl = document.getElementById('bottom-deck');
+      deckEl.scrollTop = deckEl.scrollHeight;
+    }
+  }
+
+  document.getElementById('btn-quiz-continue').addEventListener('click', advanceToNextQuestion);
+  document.getElementById('btn-next-q').addEventListener('click', advanceToNextQuestion);
+  document.getElementById('btn-miss-next').addEventListener('click', advanceToNextQuestion);
+
+  // ==========================================
+  // 7. ARCADE INPUTS & STRUGGLE
+  // ==========================================
+  const btnR = document.getElementById('btn-right');
+  const btnD = document.getElementById('btn-drop');
+
+  const setRight = (val) => {
+    if (state.phase !== 'ARCADE') return;
+    if (claw.state !== 'IDLE' && claw.state !== 'MOVING') return;
+    inputHoldRight = val;
+    btnR.classList.toggle('holding', val);
+    claw.state = val ? 'MOVING' : 'IDLE';
+    sfx.init();
+  };
+
+  btnR.addEventListener('mousedown', (e) => { e.preventDefault(); setRight(true); });
+  window.addEventListener('mouseup', () => setRight(false));
+  btnR.addEventListener('touchstart', (e) => { e.preventDefault(); setRight(true); }, { passive: false });
+  btnR.addEventListener('touchend', (e) => { e.preventDefault(); setRight(false); }, { passive: false });
+  btnR.addEventListener('touchcancel', () => setRight(false));
+
+  function triggerDrop() {
+    if (state.phase !== 'ARCADE') return;
+    if (claw.state !== 'IDLE' && claw.state !== 'MOVING') return;
+    inputHoldRight = false;
+    btnR.classList.remove('holding');
+    btnR.disabled = true;
+    btnD.disabled = true;
+    claw.state = 'DROPPING';
+    sfx.drop();
+  }
+
+  btnD.addEventListener('mousedown', (e) => { e.preventDefault(); triggerDrop(); });
+  btnD.addEventListener('touchstart', (e) => { e.preventDefault(); triggerDrop(); }, { passive: false });
+
+  window.addEventListener('keydown', (e) => {
+    if (state.phase === 'ARCADE') {
+      if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        setRight(true);
+      } else if (e.code === 'Space' || e.code === 'ArrowDown') {
+        e.preventDefault();
+        triggerDrop();
+      }
+    } else if (state.phase === 'STRUGGLING' && e.code === 'Space') {
+      e.preventDefault();
+      boostStruggle();
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowRight') setRight(false);
+  });
+
+  function startStruggle(rarity) {
+    state.phase = 'STRUGGLING';
+    struggleData.hp = 68;
+    struggleData.timer = (rarity === 'l') ? 3.5 : 2.7;
+    document.getElementById('struggle-ui').classList.add('active');
+  }
+
+  function boostStruggle() {
+    if (state.phase === 'STRUGGLING') {
+      struggleData.hp = Math.min(100, struggleData.hp + 18);
+      sfx.struggle();
+    }
+  }
+
+  document.getElementById('btn-tap').addEventListener('mousedown', (e) => { e.preventDefault(); boostStruggle(); });
+  document.getElementById('btn-tap').addEventListener('touchstart', (e) => { e.preventDefault(); boostStruggle(); }, { passive: false });
+
+  function endArcadeCycle() {
+    claw.state = 'IDLE';
+    document.getElementById('arcade-timer').style.display = 'none';
+
+    if (state.grabbedCap) {
+      const wonCap = state.grabbedCap;
+      state.grabbedCap = null;
+      state.phase = 'REVEAL';
+
+      sfx.win(wonCap.rarity === 'l');
+      state.inventory[wonCap.prize.id] = (state.inventory[wonCap.prize.id] || 0) + 1;
+      state.totalPrizes++;
+      updateHUD();
+
+      const meta = RARITY_META[wonCap.rarity];
+      document.getElementById('rev-icon').textContent = wonCap.prize.e;
+      document.getElementById('rev-name').textContent = wonCap.prize.n;
+      const rarEl = document.getElementById('rev-rarity');
+      rarEl.className = `prize-rarity ${meta.badge}`;
+      rarEl.textContent = meta.label;
+
+      document.getElementById('reveal-modal').classList.add('open');
+    } else {
+      state.phase = 'MISS';
+      document.getElementById('miss-modal').classList.add('open');
+    }
+  }
+
+  // ==========================================
+  // 8. DISPLAY SHELF & END SCREEN
+  // ==========================================
+  function renderShelf() {
+    const grid = document.getElementById('shelf-grid');
+    grid.innerHTML = '';
+    const unlockedCount = Object.keys(state.inventory).length;
+    document.getElementById('shelf-subtitle').textContent = `Unlocked ${unlockedCount} / 25 Prizes (Total Grabbed: ${state.totalPrizes})`;
+
+    ['l', 'r', 'uc', 'c', 'vc'].forEach(rType => {
+      PRIZES[rType].forEach(p => {
+        const count = state.inventory[p.id] || 0;
+        const div = document.createElement('div');
+        div.className = `shelf-item ${count > 0 ? '' : 'locked'}`;
+        if (count > 0) {
+          div.style.borderColor = RARITY_META[rType].border;
+        }
+        div.innerHTML = `
+          <div class="shelf-icon">${count > 0 ? p.e : '❓'}</div>
+          <div class="shelf-label">${count > 0 ? p.n : '???'}</div>
+          <div class="shelf-qty">${count > 0 ? 'x' + count : rType.toUpperCase()}</div>
+        `;
+        grid.appendChild(div);
+      });
+    });
+  }
+
+  document.getElementById('btn-shelf').addEventListener('click', () => {
+    renderShelf();
+    document.getElementById('shelf-modal').classList.add('open');
+  });
+  document.getElementById('btn-end-shelf').addEventListener('click', () => {
+    renderShelf();
+    document.getElementById('shelf-modal').classList.add('open');
+  });
+  document.getElementById('btn-close-shelf').addEventListener('click', () => {
+    document.getElementById('shelf-modal').classList.remove('open');
+  });
+
+  function showEnd() {
+    state.phase = 'END';
+    const unlockedCount = Object.keys(state.inventory).length;
+    document.getElementById('end-summary').innerHTML =
+      `You completed all <b>20</b> Past Tense questions!<br><br>` +
+      `🎁 Total Prizes Grabbed: <b>${state.totalPrizes}</b><br>` +
+      `🏆 Unique Collection Unlocked: <b>${unlockedCount} / 25</b>`;
+    document.getElementById('end-modal').classList.add('open');
+  }
+
+  document.getElementById('btn-start-game').addEventListener('click', initGame);
+  document.getElementById('btn-restart').addEventListener('click', initGame);
+  document.getElementById('btn-mute').addEventListener('click', (e) => {
+    sfx.init();
+    sfx.muted = !sfx.muted;
+    e.target.textContent = sfx.muted ? '🔇' : '🔊';
+  });
+
+  // Populate initial decorative pit and start render loop
+  populateCapsulePit(2);
+  requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
