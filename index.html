@@ -48,6 +48,10 @@
       box-shadow: 0 0 40px rgba(181, 56, 255, 0.25), inset 0 0 30px rgba(0, 0, 0, 0.85);
     }
 
+    #app-frame.screen-shake {
+      animation: screenShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
     /* 4:3 for Horizontal Tablet / PC */
     @media (min-aspect-ratio: 1/1) {
       #app-frame {
@@ -150,6 +154,12 @@
       color: var(--neon-pink);
       text-shadow: 0 0 10px var(--neon-pink);
       display: none;
+    }
+
+    #arcade-timer.urgent {
+      animation: pulseFast 0.35s infinite alternate;
+      background: rgba(255, 42, 122, 0.25);
+      color: #fff;
     }
 
     #mystery-banner {
@@ -257,11 +267,13 @@
       background: rgba(57, 255, 20, 0.22);
       border-color: var(--neon-green);
       box-shadow: 0 0 14px rgba(57, 255, 20, 0.45);
+      animation: popScale 0.3s ease;
     }
 
     .opt-btn.wrong {
       background: rgba(255, 42, 122, 0.2);
       border-color: var(--neon-pink);
+      animation: shakeX 0.35s ease;
     }
 
     .opt-btn:disabled {
@@ -467,6 +479,7 @@
       text-shadow: 0 0 12px var(--neon-gold);
       text-align: center;
       line-height: 1.35;
+      animation: shakeX 0.3s infinite;
     }
 
     .st-bar-bg {
@@ -499,10 +512,11 @@
       box-shadow: 0 0 28px var(--neon-pink);
       cursor: pointer;
       touch-action: manipulation;
+      animation: pulseFast 0.4s infinite alternate;
     }
 
     #btn-tap:active {
-      transform: scale(0.9);
+      transform: scale(0.88);
       background: #fff;
       color: var(--neon-pink);
     }
@@ -511,8 +525,8 @@
     .modal-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(3, 3, 8, 0.88);
-      backdrop-filter: blur(5px);
+      background: rgba(3, 3, 8, 0.9);
+      backdrop-filter: blur(6px);
       display: none;
       align-items: center;
       justify-content: center;
@@ -522,17 +536,28 @@
 
     .modal-overlay.open { display: flex; }
 
+    #reveal-fx-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 31;
+    }
+
     .modal-box {
+      position: relative;
+      z-index: 32;
       width: 100%;
       max-width: 490px;
       max-height: 92%;
       overflow-y: auto;
       background: #0d0b16;
       border: 2px solid var(--neon-purple);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 18px 20px;
       text-align: center;
-      box-shadow: 0 0 32px rgba(181, 56, 255, 0.45);
+      box-shadow: 0 0 36px rgba(181, 56, 255, 0.45);
     }
 
     .m-title {
@@ -552,7 +577,7 @@
     }
 
     .m-btn {
-      padding: 11px 26px;
+      padding: 11px 28px;
       background: var(--neon-purple);
       color: #fff;
       border: none;
@@ -570,40 +595,214 @@
       transform: translateY(-1px);
     }
 
-    /* Prize Reveal */
-    .prize-icon-large {
-      font-size: 62px;
-      margin: 8px 0;
-      filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
-      animation: float 2s infinite ease-in-out;
+    /* Exaggerated Prize Reveal Stage */
+    #reveal-box {
+      overflow: hidden;
+      transition: border-color 0.25s, box-shadow 0.25s;
     }
 
-    .prize-name {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--neon-gold);
-      margin-bottom: 6px;
+    #reveal-box.tier-vc {
+      border-color: #64748b;
+      box-shadow: 0 0 28px rgba(100, 116, 139, 0.45);
+    }
+
+    #reveal-box.tier-c {
+      border-color: #22c55e;
+      box-shadow: 0 0 32px rgba(34, 197, 94, 0.45);
+    }
+
+    #reveal-box.tier-uc {
+      border-color: #00f0ff;
+      box-shadow: 0 0 36px rgba(0, 240, 255, 0.55);
+    }
+
+    #reveal-box.tier-r {
+      border-color: #e879f9;
+      box-shadow: 0 0 44px rgba(217, 70, 239, 0.75);
+    }
+
+    #reveal-box.tier-l {
+      border-color: #facc15;
+      box-shadow: 0 0 56px rgba(255, 183, 3, 0.92);
+    }
+
+    .reveal-stage-wrap {
+      position: relative;
+      width: 148px;
+      height: 148px;
+      margin: 6px auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sunburst-rays {
+      position: absolute;
+      inset: -16px;
+      border-radius: 50%;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .sunburst-rays.active {
+      opacity: 0.85;
+      animation: spinSlow 7s linear infinite;
+    }
+
+    .sunburst-rays.rays-vc {
+      background: repeating-conic-gradient(from 0deg, rgba(148, 163, 184, 0.16) 0deg 15deg, transparent 15deg 30deg);
+    }
+
+    .sunburst-rays.rays-c {
+      background: repeating-conic-gradient(from 0deg, rgba(57, 255, 20, 0.22) 0deg 15deg, transparent 15deg 30deg);
+    }
+
+    .sunburst-rays.rays-uc {
+      background: repeating-conic-gradient(from 0deg, rgba(0, 240, 255, 0.28) 0deg 15deg, transparent 15deg 30deg);
+    }
+
+    .sunburst-rays.rays-r {
+      background: repeating-conic-gradient(from 0deg, rgba(217, 70, 239, 0.38) 0deg 12deg, transparent 12deg 24deg);
+    }
+
+    .sunburst-rays.rays-l {
+      background: repeating-conic-gradient(from 0deg, rgba(255, 183, 3, 0.5) 0deg 10deg, rgba(255, 42, 122, 0.22) 10deg 20deg);
+    }
+
+    /* Animated Capsule Cracking Open */
+    #cracking-capsule {
+      position: absolute;
+      width: 104px;
+      height: 104px;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #cracking-capsule.shaking {
+      animation: violentRattle 0.16s infinite linear;
+    }
+
+    .cap-top-half {
+      width: 96px;
+      height: 48px;
+      border-radius: 48px 48px 0 0;
+      background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.98), rgba(203, 213, 225, 0.85));
+      border: 3px solid #1e293b;
+      border-bottom: 4px solid #e2e8f0;
+      transform-origin: bottom right;
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+    }
+
+    .cap-bot-half {
+      width: 96px;
+      height: 48px;
+      border-radius: 0 0 48px 48px;
+      background: radial-gradient(circle at 35% 35%, #ff85b3, #e11d48 70%, #881337);
+      border: 3px solid #1e293b;
+      border-top: 2px solid #475569;
+      transform-origin: top left;
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+    }
+
+    #cracking-capsule.cracked .cap-top-half {
+      transform: translate(45px, -65px) rotate(55deg) scale(0.7);
+      opacity: 0;
+    }
+
+    #cracking-capsule.cracked .cap-bot-half {
+      transform: translate(-35px, 60px) rotate(-42deg) scale(0.7);
+      opacity: 0;
+    }
+
+    .prize-showcase {
+      position: relative;
+      z-index: 3;
+      width: 122px;
+      height: 122px;
+      border-radius: 20px;
+      background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.18), rgba(10, 8, 22, 0.95));
+      border: 2.5px solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
+      transform: scale(0.15);
+      opacity: 0;
+    }
+
+    .prize-showcase.revealed {
+      animation: prizeBurstIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.35) forwards;
+    }
+
+    .prize-showcase svg {
+      width: 94px;
+      height: 94px;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
+      animation: float 2s infinite ease-in-out;
     }
 
     .prize-rarity {
       font-size: 12px;
-      font-weight: 800;
-      padding: 3px 10px;
+      font-weight: 900;
+      letter-spacing: 1.4px;
+      padding: 4px 14px;
       border-radius: 999px;
       display: inline-block;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
     }
 
-    .r-vc { background: #334155; color: #cbd5e1; border: 1px solid #64748b; }
+    .r-vc { background: #334155; color: #e2e8f0; border: 1px solid #64748b; }
     .r-c { background: #14532d; color: #86efac; border: 1px solid #22c55e; }
     .r-uc { background: #1e3a8a; color: #93c5fd; border: 1px solid #38bdf8; }
-    .r-rare { background: #701a75; color: #f5d0fe; border: 1px solid #e879f9; box-shadow: 0 0 10px #d946ef; }
-    .r-leg { background: #78350f; color: #fef08a; border: 1px solid #facc15; box-shadow: 0 0 14px #ffb703; animation: pulseFast 0.9s infinite alternate; }
+    .r-rare { background: #701a75; color: #f5d0fe; border: 1px solid #e879f9; box-shadow: 0 0 12px #d946ef; }
+    .r-leg { background: #78350f; color: #fef08a; border: 1px solid #facc15; box-shadow: 0 0 16px #ffb703; animation: pulseFast 0.7s infinite alternate; }
+
+    .prize-name {
+      font-size: 21px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 4px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .prize-price-tag {
+      display: inline-block;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--neon-gold);
+      background: rgba(0, 0, 0, 0.55);
+      border: 1.5px solid rgba(255, 183, 3, 0.45);
+      padding: 3px 14px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(255, 183, 3, 0.5);
+    }
+
+    .prize-price-tag.trash-price {
+      color: #fda4af;
+      border-color: rgba(255, 42, 122, 0.45);
+      text-shadow: none;
+    }
+
+    .prize-quip {
+      font-size: 13px;
+      font-style: italic;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 7px 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
 
     /* Display Shelf Grid */
     #shelf-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(94px, 1fr));
       gap: 8px;
       margin-top: 12px;
     }
@@ -611,7 +810,7 @@
     .shelf-item {
       background: rgba(255, 255, 255, 0.04);
       border: 1.5px solid #334155;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 8px 5px;
       display: flex;
       flex-direction: column;
@@ -621,12 +820,22 @@
     }
 
     .shelf-item.locked {
-      opacity: 0.42;
+      opacity: 0.45;
       border-style: dashed;
     }
 
-    .shelf-icon {
-      font-size: 26px;
+    .shelf-art {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shelf-art svg {
+      width: 44px;
+      height: 44px;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.5));
     }
 
     .shelf-label {
@@ -637,23 +846,74 @@
       line-height: 1.25;
     }
 
-    .shelf-qty {
-      font-size: 10px;
+    .shelf-val {
+      font-size: 9.5px;
       font-weight: 800;
+      color: var(--neon-gold);
+    }
+
+    .shelf-qty {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
       color: #cbd5e1;
       background: #05040a;
-      padding: 1px 6px;
+      padding: 2px 7px;
       border-radius: 10px;
     }
 
+    /* Keyframe Animations */
     @keyframes float {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-7px); }
+      50% { transform: translateY(-6px); }
     }
 
     @keyframes pulseFast {
-      0% { opacity: 0.82; transform: scale(0.98); }
-      100% { opacity: 1; transform: scale(1.03); }
+      0% { opacity: 0.85; transform: scale(0.97); }
+      100% { opacity: 1; transform: scale(1.04); }
+    }
+
+    @keyframes popScale {
+      0% { transform: scale(0.95); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shakeX {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    @keyframes violentRattle {
+      0%   { transform: translate(0, 0) rotate(0deg) scale(1.04); }
+      20%  { transform: translate(-7px, -3px) rotate(-9deg) scale(1.08); }
+      40%  { transform: translate(7px, 2px) rotate(9deg) scale(1.06); }
+      60%  { transform: translate(-6px, 3px) rotate(-7deg) scale(1.1); }
+      80%  { transform: translate(6px, -2px) rotate(8deg) scale(1.07); }
+      100% { transform: translate(0, 0) rotate(0deg) scale(1.04); }
+    }
+
+    @keyframes prizeBurstIn {
+      0%   { transform: scale(0.15) rotate(-18deg); opacity: 0; }
+      65%  { transform: scale(1.16) rotate(5deg); opacity: 1; }
+      85%  { transform: scale(0.95) rotate(-2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0); }
+      15% { transform: translate(-8px, 5px); }
+      30% { transform: translate(8px, -6px); }
+      45% { transform: translate(-6px, -4px); }
+      60% { transform: translate(6px, 5px); }
+      75% { transform: translate(-3px, 2px); }
     }
   </style>
 </head>
@@ -664,7 +924,7 @@
   <div id="hud-bar">
     <div class="hud-group">
       <span class="hud-badge" id="q-counter">Q: 1/20</span>
-      <span class="hud-badge" style="color:var(--neon-gold); border-color:var(--neon-gold);" id="prize-counter">Prizes: 0</span>
+      <span class="hud-badge" style="color:var(--neon-gold); border-color:var(--neon-gold);" id="networth-counter">Value: $0</span>
     </div>
     <div class="hud-group">
       <button class="hud-btn" id="btn-shelf">🏆 Shelf (<span id="dex-count">0/25</span>)</button>
@@ -740,14 +1000,26 @@
     </div>
   </div>
 
-  <!-- Prize Reveal Modal -->
+  <!-- Exaggerated Prize Reveal Modal -->
   <div class="modal-overlay" id="reveal-modal">
-    <div class="modal-box">
-      <div class="m-title">CAPSULE OPENED!</div>
-      <div class="prize-icon-large" id="rev-icon">🎁</div>
-      <div class="prize-name" id="rev-name">Item Name</div>
-      <div class="prize-rarity r-c" id="rev-rarity">COMMON</div>
-      <div>
+    <canvas id="reveal-fx-canvas"></canvas>
+    <div class="modal-box" id="reveal-box">
+      <div class="m-title" id="rev-header-title">CRACKING CAPSULE...</div>
+
+      <div class="reveal-stage-wrap">
+        <div class="sunburst-rays" id="rev-rays"></div>
+        <div id="cracking-capsule">
+          <div class="cap-top-half" id="cap-top"></div>
+          <div class="cap-bot-half" id="cap-bot"></div>
+        </div>
+        <div class="prize-showcase" id="rev-art"></div>
+      </div>
+
+      <div id="rev-details" style="opacity:0; transition:opacity 0.35s ease;">
+        <div class="prize-rarity r-c" id="rev-rarity">COMMON</div>
+        <div class="prize-name" id="rev-name">Item Name</div>
+        <div class="prize-price-tag" id="rev-price">Est. Value: $0</div>
+        <div class="prize-quip" id="rev-quip">Quip text</div>
         <button class="m-btn" id="btn-next-q">Next Question ➔</button>
       </div>
     </div>
@@ -822,47 +1094,317 @@
   ];
 
   // ==========================================
-  // 2. PRIZES & DECORATIVE GACHAPON SHELL PALETTES (ALL ENGLISH)
+  // 2. AUTHENTIC CUSTOM VECTOR PRIZE ARTWORK
   // ==========================================
+  const PRIZE_SVGS = {
+    locked: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" fill="#1e293b" stroke="#475569" stroke-width="2.5" stroke-dasharray="5 3"/><text x="32" y="40" text-anchor="middle" fill="#64748b" font-size="26" font-weight="900" font-family="sans-serif">?</text></svg>`,
+
+    // VERY COMMON
+    boot: `<svg viewBox="0 0 64 64">
+      <path d="M18 14 H34 V36 C34 38 48 39 51 44 C53 47 52 51 47 51 H16 C14 51 14 48 15 44 L18 14 Z" fill="#78350f" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M14 51 H49 L51 54 H13 Z" fill="#292524"/>
+      <path d="M35 51 L48 55" stroke="#292524" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="27" y1="20" x2="34" y2="20" stroke="#fde68a" stroke-width="2" stroke-linecap="round"/>
+      <line x1="27" y1="26" x2="34" y2="26" stroke="#fde68a" stroke-width="2" stroke-linecap="round"/>
+      <line x1="27" y1="32" x2="34" y2="32" stroke="#fde68a" stroke-width="2" stroke-linecap="round"/>
+      <path d="M22 10 Q19 6 22 3 M29 10 Q26 6 29 3" fill="none" stroke="#84cc16" stroke-width="2" stroke-linecap="round"/>
+    </svg>`,
+
+    can: `<svg viewBox="0 0 64 64">
+      <ellipse cx="32" cy="18" rx="15" ry="5" fill="#475569" stroke="#1e293b" stroke-width="2"/>
+      <path d="M17 18 L19 32 L16 38 L18 50 C18 53 46 53 46 50 L48 35 L45 28 L47 18 Z" fill="#94a3b8" stroke="#334155" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M18 27 L46 27 L47 42 L17 42 Z" fill="#dc2626" opacity="0.85"/>
+      <circle cx="24" cy="46" r="2.5" fill="#78350f" opacity="0.75"/>
+      <circle cx="40" cy="23" r="2" fill="#78350f" opacity="0.75"/>
+      <ellipse cx="42" cy="12" rx="11" ry="3.5" transform="rotate(-22 42 12)" fill="#cbd5e1" stroke="#334155" stroke-width="1.8"/>
+    </svg>`,
+
+    peel: `<svg viewBox="0 0 64 64">
+      <rect x="29" y="10" width="6" height="6" rx="1.5" fill="#78350f"/>
+      <path d="M29 16 C22 26 10 38 11 46 C15 44 21 37 26 28" fill="#facc15" stroke="#a16207" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M35 16 C42 26 54 38 53 46 C49 44 43 37 38 28" fill="#facc15" stroke="#a16207" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M30 16 C27 30 22 45 25 53 C30 50 31 38 32 28 C33 38 34 50 39 53 C42 45 37 30 34 16 Z" fill="#fef08a" stroke="#a16207" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="17" cy="40" r="1.5" fill="#78350f"/>
+      <circle cx="46" cy="39" r="1.5" fill="#78350f"/>
+    </svg>`,
+
+    sock: `<svg viewBox="0 0 64 64">
+      <path d="M24 11 H39 V34 C39 39 48 41 50 47 C52 52 47 56 41 55 L25 50 C21 48 22 41 24 35 Z" fill="#e2e8f0" stroke="#475569" stroke-width="2.2" stroke-linejoin="round"/>
+      <rect x="24" y="15" width="15" height="3.5" fill="#ef4444"/>
+      <rect x="24" y="21" width="15" height="3.5" fill="#3b82f6"/>
+      <rect x="28" y="31" width="7" height="7" rx="1" fill="#a855f7" stroke="#581c87" stroke-width="1.2"/>
+      <ellipse cx="47" cy="49" rx="3" ry="2.2" fill="#1e293b"/>
+    </svg>`,
+
+    paper: `<svg viewBox="0 0 64 64">
+      <polygon points="32,10 47,16 54,30 49,46 35,54 19,50 11,36 16,19" fill="#f8fafc" stroke="#64748b" stroke-width="2.2" stroke-linejoin="round"/>
+      <polyline points="16,19 30,27 47,16" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+      <polyline points="11,36 27,38 35,54" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+      <polyline points="30,27 38,39 54,30" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+      <text x="27" y="34" fill="#ef4444" font-size="11" font-weight="900" font-family="sans-serif">F-</text>
+    </svg>`,
+
+    // COMMON
+    pencil: `<svg viewBox="0 0 64 64">
+      <g transform="rotate(-45 32 32)">
+        <rect x="26" y="8" width="12" height="8" rx="2" fill="#f472b6" stroke="#831843" stroke-width="1.8"/>
+        <rect x="26" y="16" width="12" height="5" fill="#cbd5e1" stroke="#475569" stroke-width="1.5"/>
+        <rect x="26" y="21" width="12" height="26" fill="#facc15" stroke="#a16207" stroke-width="1.8"/>
+        <line x1="30" y1="21" x2="30" y2="47" stroke="#ca8a04" stroke-width="1.4"/>
+        <line x1="34" y1="21" x2="34" y2="47" stroke="#ca8a04" stroke-width="1.4"/>
+        <polygon points="26,47 38,47 32,58" fill="#fed7aa" stroke="#9a3412" stroke-width="1.6" stroke-linejoin="round"/>
+        <polygon points="30,54 34,54 32,58" fill="#1e293b"/>
+      </g>
+    </svg>`,
+
+    eraser: `<svg viewBox="0 0 64 64">
+      <g transform="rotate(-24 32 32)">
+        <rect x="12" y="21" width="40" height="22" rx="4" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+        <rect x="22" y="21" width="24" height="22" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.8"/>
+        <rect x="25" y="25" width="18" height="14" rx="1.5" fill="#ffffff"/>
+        <text x="34" y="34.5" text-anchor="middle" fill="#1e3a8a" font-size="6.5" font-weight="900" font-family="sans-serif">MAGIC</text>
+      </g>
+    </svg>`,
+
+    notebook: `<svg viewBox="0 0 64 64">
+      <rect x="17" y="10" width="32" height="44" rx="3" fill="#0ea5e9" stroke="#0369a1" stroke-width="2.2"/>
+      <rect x="24" y="17" width="18" height="11" rx="2" fill="#f8fafc" stroke="#0369a1" stroke-width="1.5"/>
+      <line x1="27" y1="21" x2="39" y2="21" stroke="#64748b" stroke-width="1.5"/>
+      <line x1="27" y1="25" x2="36" y2="25" stroke="#64748b" stroke-width="1.5"/>
+      <g stroke="#e2e8f0" stroke-width="2.4" stroke-linecap="round">
+        <line x1="13" y1="16" x2="19" y2="16"/><line x1="13" y1="24" x2="19" y2="24"/>
+        <line x1="13" y1="32" x2="19" y2="32"/><line x1="13" y1="40" x2="19" y2="40"/>
+        <line x1="13" y1="48" x2="19" y2="48"/>
+      </g>
+    </svg>`,
+
+    ruler: `<svg viewBox="0 0 64 64">
+      <g transform="rotate(-35 32 32)">
+        <rect x="8" y="23" width="48" height="18" rx="2.5" fill="#fde047" fill-opacity="0.92" stroke="#ca8a04" stroke-width="2"/>
+        <g stroke="#713f12" stroke-width="1.6" stroke-linecap="round">
+          <line x1="14" y1="23" x2="14" y2="31"/><line x1="20" y1="23" x2="20" y2="28"/>
+          <line x1="26" y1="23" x2="26" y2="31"/><line x1="32" y1="23" x2="32" y2="28"/>
+          <line x1="38" y1="23" x2="38" y2="31"/><line x1="44" y1="23" x2="44" y2="28"/>
+          <line x1="50" y1="23" x2="50" y2="31"/>
+        </g>
+      </g>
+    </svg>`,
+
+    scissors: `<svg viewBox="0 0 64 64">
+      <path d="M26 30 L48 14 L51 18 L31 33 Z" fill="#cbd5e1" stroke="#475569" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M26 34 L48 50 L51 46 L31 31 Z" fill="#e2e8f0" stroke="#475569" stroke-width="1.6" stroke-linejoin="round"/>
+      <circle cx="19" cy="22" r="7.5" fill="none" stroke="#ef4444" stroke-width="4"/>
+      <circle cx="19" cy="42" r="7.5" fill="none" stroke="#ef4444" stroke-width="4"/>
+      <circle cx="31" cy="32" r="2.2" fill="#334155"/>
+    </svg>`,
+
+    // UNCOMMON
+    cpn20: `<svg viewBox="0 0 64 64">
+      <path d="M10 19 H54 V27 A5 5 0 0 0 54 37 V45 H10 V37 A5 5 0 0 0 10 27 Z" fill="#f59e0b" stroke="#fef08a" stroke-width="2"/>
+      <line x1="21" y1="20" x2="21" y2="44" stroke="#78350f" stroke-width="1.8" stroke-dasharray="3 3"/>
+      <text x="38" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="900" font-family="sans-serif">20%</text>
+      <text x="38" y="40" text-anchor="middle" fill="#fef08a" font-size="7.5" font-weight="900" font-family="sans-serif">OFF</text>
+      <circle cx="15.5" cy="32" r="2.5" fill="#78350f"/>
+    </svg>`,
+
+    movie: `<svg viewBox="0 0 64 64">
+      <g transform="rotate(-14 32 32)">
+        <rect x="9" y="18" width="46" height="28" rx="3" fill="#e11d48" stroke="#fecdd3" stroke-width="2"/>
+        <rect x="14" y="22" width="36" height="20" fill="none" stroke="#fda4af" stroke-width="1.2" stroke-dasharray="3 2"/>
+        <text x="32" y="31" text-anchor="middle" fill="#fef08a" font-size="8.5" font-weight="900" font-family="sans-serif">IMAX VIP</text>
+        <text x="32" y="39" text-anchor="middle" fill="#fff" font-size="6.5" font-weight="800" font-family="sans-serif">ADMIT ONE</text>
+      </g>
+    </svg>`,
+
+    ice: `<svg viewBox="0 0 64 64">
+      <polygon points="21,34 43,34 39,50 25,50" fill="#bae6fd" stroke="#0284c7" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="29" y="50" width="6" height="5" fill="#7dd3fc"/>
+      <ellipse cx="32" cy="56" rx="11" ry="2.5" fill="#38bdf8"/>
+      <circle cx="26" cy="29" r="8" fill="#f472b6" stroke="#be185d" stroke-width="1.5"/>
+      <circle cx="38" cy="29" r="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+      <circle cx="32" cy="22" r="8.5" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <path d="M26 19 Q32 25 38 19" fill="none" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="32" cy="12" r="3.5" fill="#dc2626"/>
+      <path d="M32 9 Q36 5 39 7" fill="none" stroke="#16a34a" stroke-width="1.6"/>
+    </svg>`,
+
+    burger: `<svg viewBox="0 0 64 64">
+      <path d="M14 27 C14 14 50 14 50 27 Z" fill="#f59e0b" stroke="#92400e" stroke-width="2"/>
+      <circle cx="25" cy="20" r="1.2" fill="#fef3c7"/><circle cx="33" cy="18" r="1.2" fill="#fef3c7"/><circle cx="40" cy="21" r="1.2" fill="#fef3c7"/>
+      <path d="M12 29 Q18 33 24 29 Q30 33 36 29 Q42 33 48 29 Q51 31 52 29" fill="none" stroke="#22c55e" stroke-width="3.5" stroke-linecap="round"/>
+      <rect x="13" y="33" width="38" height="5" rx="2.5" fill="#78350f"/>
+      <polygon points="15,38 49,38 32,43" fill="#facc15"/>
+      <rect x="13" y="41" width="38" height="5" rx="2.5" fill="#78350f"/>
+      <path d="M15 47 H49 C49 52 15 52 15 47 Z" fill="#d97706" stroke="#92400e" stroke-width="2"/>
+    </svg>`,
+
+    park: `<svg viewBox="0 0 64 64">
+      <rect x="11" y="13" width="42" height="38" rx="6" fill="#312e81" stroke="#38bdf8" stroke-width="2.2"/>
+      <circle cx="32" cy="29" r="10" fill="none" stroke="#f472b6" stroke-width="2"/>
+      <line x1="32" y1="19" x2="32" y2="39" stroke="#f472b6" stroke-width="1.2"/>
+      <line x1="22" y1="29" x2="42" y2="29" stroke="#f472b6" stroke-width="1.2"/>
+      <polyline points="24,44 32,33 40,44" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+      <rect x="16" y="43" width="32" height="6" rx="2" fill="#facc15"/>
+      <text x="32" y="47.5" text-anchor="middle" fill="#1e1b4b" font-size="5.2" font-weight="900" font-family="sans-serif">FAST PASS</text>
+    </svg>`,
+
+    // RARE
+    goldbar: `<svg viewBox="0 0 64 64">
+      <polygon points="18,22 46,22 54,44 10,44" fill="#f59e0b" stroke="#78350f" stroke-width="2" stroke-linejoin="round"/>
+      <polygon points="22,25 42,25 47,40 17,40" fill="#fde047"/>
+      <polygon points="22,25 42,25 38,31 25,31" fill="#fef9c3"/>
+      <text x="32" y="37" text-anchor="middle" fill="#b45309" font-size="6.5" font-weight="900" font-family="sans-serif">999.9</text>
+      <path d="M51 15 L53 19 L57 21 L53 23 L51 27 L49 23 L45 21 L49 19 Z" fill="#fef08a"/>
+    </svg>`,
+
+    gem: `<svg viewBox="0 0 64 64">
+      <polygon points="22,12 42,12 52,24 52,40 42,52 22,52 12,40 12,24" fill="#2563eb" stroke="#93c5fd" stroke-width="2" stroke-linejoin="round"/>
+      <polygon points="24,18 40,18 46,26 46,38 40,46 24,46 18,38 18,26" fill="#38bdf8"/>
+      <polygon points="24,18 40,18 35,28 24,28" fill="#e0f2fe"/>
+      <line x1="12" y1="24" x2="18" y2="26" stroke="#bae6fd" stroke-width="1.5"/>
+      <line x1="52" y1="24" x2="46" y2="26" stroke="#bae6fd" stroke-width="1.5"/>
+      <line x1="12" y1="40" x2="18" y2="38" stroke="#bae6fd" stroke-width="1.5"/>
+      <line x1="52" y1="40" x2="46" y2="38" stroke="#bae6fd" stroke-width="1.5"/>
+    </svg>`,
+
+    sportscar: `<svg viewBox="0 0 64 64">
+      <polygon points="10,33 13,26 17,26 15,33" fill="#dc2626"/>
+      <path d="M10 38 L12 31 L23 29 L31 22 H44 L52 30 L57 34 V40 H10 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.8" stroke-linejoin="round"/>
+      <polygon points="26,29 32,24 42,24 46,29" fill="#0f172a"/>
+      <polygon points="52,32 56,34 52,35" fill="#fef08a"/>
+      <circle cx="20" cy="41" r="6" fill="#1e293b" stroke="#cbd5e1" stroke-width="2"/>
+      <circle cx="20" cy="41" r="2.2" fill="#94a3b8"/>
+      <circle cx="46" cy="41" r="6" fill="#1e293b" stroke="#cbd5e1" stroke-width="2"/>
+      <circle cx="46" cy="41" r="2.2" fill="#94a3b8"/>
+    </svg>`,
+
+    crown: `<svg viewBox="0 0 64 64">
+      <polygon points="12,44 10,21 23,32 32,16 41,32 54,21 52,44" fill="#facc15" stroke="#854d0e" stroke-width="2.2" stroke-linejoin="round"/>
+      <rect x="12" y="44" width="40" height="6" rx="2" fill="#eab308" stroke="#854d0e" stroke-width="2"/>
+      <circle cx="10" cy="19" r="2.5" fill="#fef08a"/><circle cx="32" cy="14" r="3" fill="#fef08a"/><circle cx="54" cy="19" r="2.5" fill="#fef08a"/>
+      <circle cx="32" cy="36" r="3.5" fill="#dc2626" stroke="#fff" stroke-width="1"/>
+      <circle cx="20" cy="38" r="2.5" fill="#2563eb"/>
+      <circle cx="44" cy="38" r="2.5" fill="#16a34a"/>
+    </svg>`,
+
+    robot: `<svg viewBox="0 0 64 64">
+      <line x1="32" y1="8" x2="32" y2="15" stroke="#94a3b8" stroke-width="2.5"/>
+      <circle cx="32" cy="7" r="3" fill="#ff2a7a"/>
+      <rect x="19" y="15" width="26" height="19" rx="5" fill="#cbd5e1" stroke="#334155" stroke-width="2"/>
+      <rect x="23" y="20" width="18" height="7" rx="3" fill="#0f172a"/>
+      <circle cx="27" cy="23.5" r="2" fill="#00f0ff"/><circle cx="37" cy="23.5" r="2" fill="#00f0ff"/>
+      <rect x="16" y="36" width="32" height="18" rx="4" fill="#94a3b8" stroke="#334155" stroke-width="2"/>
+      <polygon points="27,39 32,42 27,45" fill="#ef4444"/><polygon points="37,39 32,42 37,45" fill="#ef4444"/>
+    </svg>`,
+
+    // LEGENDARY
+    cybertruck: `<svg viewBox="0 0 64 64">
+      <polygon points="8,36 33,19 57,33 56,41 8,41" fill="#cbd5e1" stroke="#334155" stroke-width="2" stroke-linejoin="round"/>
+      <polygon points="8,36 33,19 33,34 8,36" fill="#94a3b8"/>
+      <polygon points="22,31 33,22 44,30 44,33 22,33" fill="#0f172a"/>
+      <line x1="52" y1="33" x2="57" y2="33.5" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
+      <polygon points="12,42 15,35 24,35 27,42" fill="#1e293b"/>
+      <polygon points="39,42 42,35 51,35 54,42" fill="#1e293b"/>
+      <circle cx="19.5" cy="43" r="6" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+      <circle cx="19.5" cy="43" r="2.2" fill="#cbd5e1"/>
+      <circle cx="46.5" cy="43" r="6" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+      <circle cx="46.5" cy="43" r="2.2" fill="#cbd5e1"/>
+    </svg>`,
+
+    spaceship: `<svg viewBox="0 0 64 64">
+      <ellipse cx="32" cy="45" rx="10" ry="4" fill="#38bdf8" opacity="0.65"/>
+      <polygon points="25,41 39,41 35,53 29,53" fill="#00f0ff" opacity="0.85"/>
+      <path d="M21 25 C21 15 43 15 43 25 Z" fill="#7dd3fc" stroke="#0284c7" stroke-width="2"/>
+      <ellipse cx="32" cy="31" rx="24" ry="8.5" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+      <ellipse cx="32" cy="33" rx="18" ry="4.5" fill="#6366f1"/>
+      <circle cx="15" cy="31" r="2" fill="#facc15"/><circle cx="24" cy="33" r="2" fill="#ff2a7a"/>
+      <circle cx="32" cy="33.5" r="2" fill="#39ff14"/><circle cx="40" cy="33" r="2" fill="#ff2a7a"/>
+      <circle cx="49" cy="31" r="2" fill="#facc15"/>
+    </svg>`,
+
+    diamonds100: `<svg viewBox="0 0 64 64">
+      <g stroke="#0284c7" stroke-width="1.4" stroke-linejoin="round">
+        <polygon points="18,24 26,24 30,30 22,40 14,30" fill="#7dd3fc"/>
+        <polygon points="38,24 46,24 50,30 42,40 34,30" fill="#38bdf8"/>
+        <polygon points="26,14 38,14 44,22 32,35 20,22" fill="#e0f2fe"/>
+        <polygon points="26,14 38,14 35,22 29,22" fill="#ffffff"/>
+        <polygon points="14,34 24,34 28,40 19,50 10,40" fill="#bae6fd"/>
+        <polygon points="40,34 50,34 54,40 45,50 36,40" fill="#7dd3fc"/>
+        <polygon points="26,31 38,31 43,38 32,51 21,38" fill="#38bdf8"/>
+        <polygon points="29,31 35,31 37,38 27,38" fill="#ffffff"/>
+      </g>
+      <path d="M51 11 L52.5 14.5 L56 16 L52.5 17.5 L51 21 L49.5 17.5 L46 16 L49.5 14.5 Z" fill="#fef08a"/>
+    </svg>`,
+
+    goldpile: `<svg viewBox="0 0 64 64">
+      <g stroke="#78350f" stroke-width="1.6" stroke-linejoin="round">
+        <polygon points="10,48 26,48 29,41 13,41" fill="#f59e0b"/>
+        <polygon points="25,48 41,48 44,41 28,41" fill="#fbbf24"/>
+        <polygon points="39,48 55,48 57,41 42,41" fill="#d97706"/>
+        <polygon points="17,41 33,41 36,34 20,34" fill="#fde047"/>
+        <polygon points="32,41 48,41 50,34 35,34" fill="#f59e0b"/>
+        <polygon points="24,34 40,34 42,27 26,27" fill="#fef08a"/>
+      </g>
+      <circle cx="13" cy="51" r="3" fill="#fde047" stroke="#92400e" stroke-width="1.2"/>
+      <circle cx="51" cy="51" r="3" fill="#fde047" stroke="#92400e" stroke-width="1.2"/>
+      <path d="M32 13 L34 18 L39 20 L34 22 L32 26 L30 22 L25 20 L30 18 Z" fill="#fef9c3"/>
+    </svg>`,
+
+    island: `<svg viewBox="0 0 64 64">
+      <ellipse cx="32" cy="49" rx="26" ry="7" fill="#0284c7"/>
+      <path d="M12 47 C16 37 48 37 52 47 Z" fill="#fde047" stroke="#ca8a04" stroke-width="1.8"/>
+      <path d="M27 41 Q25 30 23 23" fill="none" stroke="#78350f" stroke-width="3.2" stroke-linecap="round"/>
+      <path d="M23 23 C16 20 12 24 11 27 M23 23 C18 16 24 13 28 15 M23 23 C30 18 35 21 36 25" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/>
+      <rect x="35" y="34" width="11" height="8" fill="#f8fafc" stroke="#475569" stroke-width="1.4"/>
+      <polygon points="33,34 40.5,28 48,34" fill="#ef4444" stroke="#991b1b" stroke-width="1.4" stroke-linejoin="round"/>
+      <circle cx="49" cy="15" r="5" fill="#facc15"/>
+    </svg>`
+  };
+
+  function getPrizeSVG(id) {
+    return PRIZE_SVGS[id] || PRIZE_SVGS.locked;
+  }
+
+  // Exaggerated & funny prize catalog with valuations & comedic quips
   const PRIZES = {
     vc: [
-      { id: 'boot', n: 'Old Smelly Boot', e: '🥾' },
-      { id: 'can', n: 'Rusty Tin Can', e: '🥫' },
-      { id: 'peel', n: 'Slippery Banana Peel', e: '🍌' },
-      { id: 'sock', n: 'Single Odd Sock', e: '🧦' },
-      { id: 'paper', n: 'Crumpled Paper Ball', e: '🗞️' }
+      { id: 'boot',  n: 'Soggy Left Boot of Doom',       val: 0.02, priceText: 'Est. Value: $0.02',       quip: 'Smells like 1998 gym socks. Comes with a free pet worm!' },
+      { id: 'can',   n: 'Vintage Half-Eaten Bean Can',   val: 0,    priceText: 'Est. Value: -$1.50 (Trash Tax)', quip: 'Expired before dinosaurs existed. Extra rusty!' },
+      { id: 'peel',  n: 'Certified Cartoon Banana Peel', val: 0.05, priceText: 'Est. Value: $0.05',       quip: '100% guaranteed to make cartoon villains slip in slow motion.' },
+      { id: 'sock',  n: 'Lonely Stinky Gym Sock',        val: 0.01, priceText: 'Est. Value: $0.01',       quip: 'Its twin vanished into a black hole inside the washing machine.' },
+      { id: 'paper', n: 'Crumpled F-Minus Paper Ball',   val: 0,    priceText: 'Est. Value: $0.00',       quip: 'Crumpled in pure panic during a surprise spelling test!' }
     ],
     c: [
-      { id: 'pencil', n: 'HB Pencil', e: '✏️' },
-      { id: 'eraser', n: 'Soft Eraser', e: '🧽' },
-      { id: 'notebook', n: 'Spiral Notebook', e: '📓' },
-      { id: 'ruler', n: '15cm Ruler', e: '📏' },
-      { id: 'scissors', n: 'Safety Scissors', e: '✂️' }
+      { id: 'pencil',   n: 'Unbreakable HB Pencil',       val: 1.50, priceText: 'Est. Value: $1.50', quip: 'Never snaps, even when you press way too hard on the paper.' },
+      { id: 'eraser',   n: 'Dust-Free Magic Eraser',      val: 2.00, priceText: 'Est. Value: $2.00', quip: 'Erases grammar mistakes so hard it almost erases the desk!' },
+      { id: 'notebook', n: 'Top-Secret Doodle Notebook',  val: 4.50, priceText: 'Est. Value: $4.50', quip: '90% space-laser battles, 10% actual English notes.' },
+      { id: 'ruler',    n: 'Laser-Straight 15cm Ruler',   val: 2.50, priceText: 'Est. Value: $2.50', quip: 'Doubles as a miniature lightsaber when nobody is looking.' },
+      { id: 'scissors', n: 'Ultra-Safe Round Scissors',   val: 3.20, priceText: 'Est. Value: $3.20', quip: 'Cuts construction paper like butter, totally harmless to fingers.' }
     ],
     uc: [
-      { id: 'cpn20', n: '20% Off Coupon', e: '🎟️' },
-      { id: 'movie', n: 'IMAX Movie Ticket', e: '🎫' },
-      { id: 'ice', n: 'Free Sundae Voucher', e: '🍨' },
-      { id: 'burger', n: 'Double Burger Pass', e: '🍔' },
-      { id: 'park', n: 'Theme Park FastPass', e: '🎡' }
+      { id: 'cpn20',  n: 'Golden 20% Off Homework Coupon', val: 25,  priceText: 'Est. Value: $25.00', quip: 'Valid only on days ending in "Y". Teacher approval not included!' },
+      { id: 'movie',  n: 'VIP Front-Row IMAX Ticket',      val: 35,  priceText: 'Est. Value: $35.00', quip: 'Includes a popcorn tub larger than your entire head.' },
+      { id: 'ice',    n: 'Triple-Scoop Mega Sundae Pass',  val: 18,  priceText: 'Est. Value: $18.00', quip: 'Warning: May cause extreme brain freeze and instant zoomies!' },
+      { id: 'burger', n: 'Quadruple-Cheeseburger Voucher', val: 24,  priceText: 'Est. Value: $24.00', quip: 'So tall you need a stepladder just to take the first bite.' },
+      { id: 'park',   n: 'Skip-Every-Line Theme Park VIP', val: 95,  priceText: 'Est. Value: $95.00', quip: 'Ride the mega rollercoaster 47 times in a row without waiting!' }
     ],
     r: [
-      { id: 'goldbar', n: '24K Gold Bullion', e: '💰' },
-      { id: 'gem', n: 'Royal Sapphire', e: '💠' },
-      { id: 'sportscar', n: 'Turbo Supercar', e: '🏎️' },
-      { id: 'crown', n: 'Emperor Crown', e: '👑' },
-      { id: 'robot', n: 'AI Butler Robot', e: '🤖' }
+      { id: 'goldbar',   n: 'Chunky 24K Fort Knox Gold Bar', val: 85000,   priceText: 'Est. Value: $85,000',    quip: 'So heavy it nearly snapped the UFO claw hydraulics in half!' },
+      { id: 'gem',       n: 'Colossal Royal Blue Sapphire',  val: 240000,  priceText: 'Est. Value: $240,000',   quip: 'Sparkles so blindingly bright you need sunglasses indoors.' },
+      { id: 'sportscar', n: 'Rocket-Boosted V12 Supercar',   val: 450000,  priceText: 'Est. Value: $450,000',   quip: '0 to 300 km/h before the morning school bell finishes ringing!' },
+      { id: 'crown',     n: 'Supreme Emperor Diamond Crown', val: 1200000, priceText: 'Est. Value: $1,200,000', quip: 'Automatically forces everyone around you to bow and say "Your Majesty".' },
+      { id: 'robot',     n: 'AI Chore & Homework Butler Bot',val: 500000,  priceText: 'Est. Value: $500,000',   quip: 'Tidies your bedroom, walks the dog, and high-fives you!' }
     ],
     l: [
-      { id: 'cybertruck', n: 'Tesla Cybertruck', e: '🛻' },
-      { id: 'spaceship', n: 'Interstellar Spaceship', e: '🛸' },
-      { id: 'diamonds100', n: '100 Pieces of Diamonds', e: '💎' },
-      { id: 'goldpile', n: 'Mountain of Pure Gold', e: '🏆' },
-      { id: 'island', n: 'Private Tropical Island', e: '🏝️' }
+      { id: 'cybertruck',  n: 'Bulletproof Tesla Cybertruck',      val: 120000000,    priceText: 'Est. Value: $120,000,000',     quip: 'Indestructible futuristic triangle tank! Mars-driving mode unlocked.' },
+      { id: 'spaceship',   n: 'Intergalactic Warp-Drive UFO',      val: 9500000000,   priceText: 'Est. Value: $9,500,000,000',   quip: 'Skip morning traffic forever—fly straight to Jupiter for lunch!' },
+      { id: 'diamonds100', n: '100 Giant Flawless Diamonds',       val: 50000000000,  priceText: 'Est. Value: $50,000,000,000',  quip: 'Enough bling to blind an entire alien galaxy from orbit!' },
+      { id: 'goldpile',    n: 'Literal Mountain of Pure Gold',     val: 888000000000, priceText: 'Est. Value: $888,000,000,000', quip: 'Heavy enough to tilt Earth’s rotation by two whole millimeters!' },
+      { id: 'island',      n: 'Private Tropical Volcano Island',   val: 999999999999, priceText: 'Est. Value: $999,999,999,999', quip: 'Includes gigabit Wi-Fi, giant water slides, and zero homework forever!' }
     ]
   };
 
-  // Pretty pastel & candy Gachapon shell colors (completely independent of prize rarity!)
+  // Pretty pastel & candy Gachapon shell colors (completely independent of prize rarity)
   const CAPSULE_SHELLS = [
     { light: '#ffc2d9', main: '#ff5c93', dark: '#b81d58', toy: '#ff85b3' }, // Sakura Pink
     { light: '#bae6fd', main: '#38bdf8', dark: '#0369a1', toy: '#7dd3fc' }, // Sky Cyan
@@ -874,12 +1416,13 @@
     { light: '#fbcfe8', main: '#ec4899', dark: '#9d174d', toy: '#f472b6' }  // Bubblegum Rose
   ];
 
+  // Clean rarity labels without brackets or extra text
   const RARITY_META = {
-    vc: { badge: 'r-vc',   label: 'VERY COMMON (Niche / Rubbish)', border: '#64748b' },
-    c:  { badge: 'r-c',    label: 'COMMON (Stationery / Essentials)', border: '#22c55e' },
-    uc: { badge: 'r-uc',   label: 'UNCOMMON (Coupons & Treats)', border: '#38bdf8' },
-    r:  { badge: 'r-rare', label: 'RARE (Luxury Treasure)', border: '#e879f9' },
-    l:  { badge: 'r-leg',  label: 'LEGENDARY (Absurd Mega-Prize!)', border: '#facc15' }
+    vc: { badge: 'r-vc',   label: 'VERY COMMON', border: '#64748b', banner: 'SAD TROMBONE...', color: '#94a3b8' },
+    c:  { badge: 'r-c',    label: 'COMMON',      border: '#22c55e', banner: 'NICE GRAB!',      color: '#39ff14' },
+    uc: { badge: 'r-uc',   label: 'UNCOMMON',    border: '#38bdf8', banner: 'SWEET SCORE!',    color: '#00f0ff' },
+    r:  { badge: 'r-rare', label: 'RARE',        border: '#e879f9', banner: 'MEGA JACKPOT!!',  color: '#e879f9' },
+    l:  { badge: 'r-leg',  label: 'LEGENDARY',   border: '#facc15', banner: 'COSMIC MIRACLE!!!', color: '#ffb703' }
   };
 
   // ==========================================
@@ -931,9 +1474,32 @@
     struggle() {
       this.play(260 + Math.random() * 120, 'square', 0.06, 0.08, 0);
     }
-    win(isLeg) {
-      const notes = isLeg ? [523, 659, 783, 1046, 1318] : [523, 659, 783, 1046];
-      notes.forEach((f, i) => this.play(f, 'square', 0.15, 0.1, i * 0.09));
+    rattleTick(step) {
+      this.play(280 + step * 55, 'triangle', 0.06, 0.07, 0);
+    }
+    crackPop() {
+      this.play(680, 'square', 0.07, 0.12, 0);
+      this.play(1040, 'sine', 0.14, 0.14, 0.04);
+    }
+    revealFanfare(rar) {
+      if (rar === 'vc') {
+        // Comedic sad trombone: Wah-wah-wah-waaaah!
+        this.play(311.13, 'sawtooth', 0.22, 0.09, 0.0);
+        this.play(293.66, 'sawtooth', 0.22, 0.09, 0.24);
+        this.play(277.18, 'sawtooth', 0.22, 0.09, 0.48);
+        this.play(261.63, 'sawtooth', 0.55, 0.10, 0.72);
+      } else if (rar === 'c' || rar === 'uc') {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.play(f, 'square', 0.14, 0.09, i * 0.08));
+      } else if (rar === 'r') {
+        [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((f, i) => this.play(f, 'square', 0.16, 0.11, i * 0.07));
+      } else {
+        // Exaggerated Legendary stadium fanfare
+        const chord = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98, 2093.0];
+        chord.forEach((f, i) => {
+          this.play(f, 'square', 0.22, 0.11, i * 0.065);
+          this.play(f * 0.5, 'sawtooth', 0.24, 0.08, i * 0.065);
+        });
+      }
     }
     slip() {
       this.play(350, 'triangle', 0.15, 0.1, 0);
@@ -953,12 +1519,25 @@
     qIdx: 0,
     inventory: {},
     totalPrizes: 0,
+    totalNetWorth: 0,
     phase: 'QUIZ', // QUIZ | ARCADE | STRUGGLING | REVEAL | MISS | TRANSITION | END
     arcTimeLeft: 10.0,
     capsules: [],
     grabbedCap: null,
-    fallingCap: null
+    fallingCap: null,
+    arcadeParticles: [],
+    floatingTexts: [],
+    bgStars: []
   };
+
+  for (let i = 0; i < 24; i++) {
+    state.bgStars.push({
+      x: Math.random() * CW,
+      y: 26 + Math.random() * 145,
+      r: 0.8 + Math.random() * 1.4,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
 
   let claw = {
     x: CHUTE_X,
@@ -974,27 +1553,56 @@
   let lastTime = performance.now();
   let struggleData = { hp: 65, timer: 3.2 };
 
+  function formatCompactMoney(num) {
+    if (num >= 1e12) return '$' + (num / 1e12).toFixed(2) + 'T';
+    if (num >= 1e9)  return '$' + (num / 1e9).toFixed(2) + 'B';
+    if (num >= 1e6)  return '$' + (num / 1e6).toFixed(2) + 'M';
+    if (num >= 1e3)  return '$' + (num / 1e3).toFixed(1) + 'K';
+    if (num % 1 !== 0) return '$' + num.toFixed(2);
+    return '$' + num.toLocaleString();
+  }
+
+  function spawnArcadeBurst(x, y, color, count = 18) {
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 40 + Math.random() * 130;
+      state.arcadeParticles.push({
+        x, y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - 35,
+        life: 0.55 + Math.random() * 0.4,
+        maxLife: 0.95,
+        color,
+        size: 2 + Math.random() * 3
+      });
+    }
+  }
+
+  function spawnFloatingText(x, y, text, color = '#00f0ff') {
+    state.floatingTexts.push({
+      x, y,
+      vy: -36,
+      life: 1.05,
+      text,
+      color
+    });
+  }
+
   function pickPrizeForRarity(rar) {
     const list = PRIZES[rar];
     return list[Math.floor(Math.random() * list.length)];
   }
 
-  // Generate 15 STATIONARY Gachapon capsules in a neat 2-tier mound
   function populateCapsulePit(diff) {
-    // Hidden rarity distribution scaled by question difficulty (1=Easy, 2=Medium, 3=Hard)
     let rarityPool = [];
     if (diff === 1) {
-      // Easy: Mostly Very Common & Common, 2 Uncommon, 1 Rare
       rarityPool = ['vc','vc','vc','vc','vc','vc', 'c','c','c','c','c','c', 'uc','uc', 'r'];
     } else if (diff === 2) {
-      // Medium: Balanced Common/Uncommon, 3 Rare, 1 Legendary
       rarityPool = ['vc','vc', 'c','c','c','c', 'uc','uc','uc','uc','uc', 'r','r','r', 'l'];
     } else {
-      // Hard: High reward odds! 5 Rare & 4 Legendary!
       rarityPool = ['vc', 'c','c', 'uc','uc','uc', 'r','r','r','r','r', 'l','l','l','l'];
     }
 
-    // Shuffle hidden rarities across the 15 pit positions
     for (let i = rarityPool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [rarityPool[i], rarityPool[j]] = [rarityPool[j], rarityPool[i]];
@@ -1003,7 +1611,7 @@
     const caps = [];
     let idx = 0;
 
-    // Bottom row: 8 stationary capsules (x = 96 to 383, y = 213)
+    // Bottom row: 8 stationary capsules
     for (let i = 0; i < 8; i++) {
       const rar = rarityPool[idx++];
       const shell = CAPSULE_SHELLS[Math.floor(Math.random() * CAPSULE_SHELLS.length)];
@@ -1019,7 +1627,7 @@
       });
     }
 
-    // Top row: 7 stationary capsules nestled neatly between bottom capsules (x = 116 to 362, y = 186)
+    // Top row: 7 stationary capsules
     for (let i = 0; i < 7; i++) {
       const rar = rarityPool[idx++];
       const shell = CAPSULE_SHELLS[Math.floor(Math.random() * CAPSULE_SHELLS.length)];
@@ -1052,8 +1660,10 @@
     populateCapsulePit(diff);
     state.arcTimeLeft = 10.0;
     const timerEl = document.getElementById('arcade-timer');
+    timerEl.classList.remove('urgent');
     timerEl.textContent = '10.0';
     timerEl.style.display = 'block';
+    spawnFloatingText(110, 82, 'CLAW POWERED!', '#39ff14');
   }
 
   // ==========================================
@@ -1066,13 +1676,11 @@
     const { x, y, r, shell } = c;
     ctx.save();
 
-    // 1. Soft 3D drop shadow beneath capsule
     ctx.fillStyle = 'rgba(0, 0, 0, 0.52)';
     ctx.beginPath();
     ctx.ellipse(x, y + r - 1, r * 0.85, 4.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 2. Bottom Colored Shell Hemisphere with 3D Radial Shading
     const botGrad = ctx.createRadialGradient(x - r * 0.35, y + r * 0.15, 2, x, y + r * 0.25, r * 1.15);
     botGrad.addColorStop(0, shell.light);
     botGrad.addColorStop(0.55, shell.main);
@@ -1083,7 +1691,6 @@
     ctx.fillStyle = botGrad;
     ctx.fill();
 
-    // 3. Top Clear Frosted Acrylic Dome
     const topGrad = ctx.createRadialGradient(x - r * 0.3, y - r * 0.45, 2, x, y - r * 0.1, r * 1.1);
     topGrad.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
     topGrad.addColorStop(0.65, 'rgba(226, 232, 240, 0.82)');
@@ -1094,7 +1701,6 @@
     ctx.fillStyle = topGrad;
     ctx.fill();
 
-    // 4. Cute Mystery Toy / Star Silhouette inside the Clear Top Dome
     ctx.fillStyle = shell.toy;
     ctx.globalAlpha = 0.55;
     ctx.beginPath();
@@ -1102,28 +1708,24 @@
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    // 5. Outer Crisp Rim Outline
     ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 6. Metallic Equator Locking Band + Center Clasp
     ctx.fillStyle = '#e2e8f0';
     ctx.fillRect(x - r + 0.5, y - 1.6, (r - 0.5) * 2, 3.2);
     ctx.strokeStyle = '#334155';
     ctx.lineWidth = 1;
     ctx.strokeRect(x - r + 0.5, y - 1.6, (r - 0.5) * 2, 3.2);
 
-    // Center capsule button/clasp
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(x, y, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    // 7. Glossy Acrylic Specular Reflection Arc + Sparkle Dot
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
     ctx.lineWidth = 2.2;
     ctx.lineCap = 'round';
@@ -1140,12 +1742,23 @@
   }
 
   function drawArcade(dt) {
+    const nowSec = performance.now() / 1000;
+
     // 1. Arcade Cabinet Backdrop
     const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
     bgGrad.addColorStop(0, '#070612');
     bgGrad.addColorStop(1, '#120d24');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CW, CH);
+
+    // Twinkling arcade background stars
+    state.bgStars.forEach(st => {
+      const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(nowSec * 3 + st.phase));
+      ctx.fillStyle = `rgba(147, 197, 253, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
 
     // Subtle neon grid lines
     ctx.strokeStyle = 'rgba(181, 56, 255, 0.08)';
@@ -1157,11 +1770,20 @@
       ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CW, gy); ctx.stroke();
     }
 
-    // 2. Top Gantry Rail
+    // 2. Top Gantry Rail with Chasing Marquee Bulbs
     ctx.fillStyle = '#1e1b2e';
-    ctx.fillRect(0, 12, CW, 10);
+    ctx.fillRect(0, 12, CW, 11);
     ctx.fillStyle = '#00f0ff';
     ctx.fillRect(0, 16, CW, 2);
+
+    const bulbStep = Math.floor(nowSec * 6) % 3;
+    for (let bx = 14; bx < CW; bx += 22) {
+      const idx = Math.floor(bx / 22) % 3;
+      ctx.fillStyle = (idx === bulbStep) ? '#ffb703' : '#334155';
+      ctx.beginPath();
+      ctx.arc(bx, 17.5, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // 3. Prize Drop Chute (Bottom-Left)
     ctx.fillStyle = 'rgba(0, 240, 255, 0.08)';
@@ -1186,15 +1808,26 @@
     ctx.lineTo(CW, 232);
     ctx.stroke();
 
-    // 5. Draw Stationary Pit Capsules (Bottom row first, then Top row)
-    state.capsules
-      .filter(c => c.layer === 0)
-      .forEach(c => drawNiceCapsule(c));
-    state.capsules
-      .filter(c => c.layer === 1)
-      .forEach(c => drawNiceCapsule(c));
+    // 5. Stationary Pit Capsules
+    state.capsules.filter(c => c.layer === 0).forEach(c => drawNiceCapsule(c));
+    state.capsules.filter(c => c.layer === 1).forEach(c => drawNiceCapsule(c));
 
-    // 6. Update Claw Movement & Collision
+    // 6. UFO Tractor Beam Cone during Arcade Aiming/Dropping
+    if (state.phase === 'ARCADE' && (claw.state === 'IDLE' || claw.state === 'MOVING' || claw.state === 'DROPPING')) {
+      const beamGrad = ctx.createLinearGradient(claw.x, claw.y, claw.x, 228);
+      beamGrad.addColorStop(0, 'rgba(0, 240, 255, 0.24)');
+      beamGrad.addColorStop(1, 'rgba(0, 240, 255, 0.02)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(claw.x - 10, claw.y + 4);
+      ctx.lineTo(claw.x + 10, claw.y + 4);
+      ctx.lineTo(claw.x + 26, 230);
+      ctx.lineTo(claw.x - 26, 230);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 7. Claw Movement & Collision
     if (claw.state === 'MOVING') {
       claw.x += claw.speed * dt;
       if (claw.x > CW - 26) claw.x = CW - 26;
@@ -1206,7 +1839,6 @@
     } else if (claw.state === 'DROPPING') {
       claw.y += claw.dropSpeed * dt;
 
-      // Check collision against top-layer capsules first, then bottom-layer
       let hitCap = null;
       const orderedCaps = [
         ...state.capsules.filter(c => c.layer === 1),
@@ -1225,6 +1857,8 @@
         state.capsules = state.capsules.filter(item => item.id !== hitCap.id);
         state.grabbedCap = hitCap;
         sfx.grab();
+        spawnArcadeBurst(hitCap.x, hitCap.y, '#00f0ff', 22);
+        spawnFloatingText(hitCap.x, hitCap.y - 24, 'LOCKED ON!', '#39ff14');
 
         if (hitCap.rarity === 'r' || hitCap.rarity === 'l') {
           claw.state = 'STRUGGLING';
@@ -1236,6 +1870,7 @@
         claw.y = 198;
         state.grabbedCap = null;
         claw.state = 'RETURNING';
+        spawnFloatingText(claw.x, 180, 'MISSED!', '#ff2a7a');
       }
     } else if (claw.state === 'RETURNING') {
       if (claw.y > 36) {
@@ -1245,11 +1880,14 @@
         claw.x -= (claw.retSpeed * 1.4) * dt;
         if (claw.x < CHUTE_X) claw.x = CHUTE_X;
       } else {
+        if (state.grabbedCap) {
+          spawnArcadeBurst(CHUTE_X, 60, '#ffb703', 28);
+        }
         endArcadeCycle();
       }
     }
 
-    // 7. Draw Grabbed Capsule inside UFO Prongs
+    // 8. Grabbed Capsule inside UFO Prongs
     if (state.grabbedCap) {
       const wobbleX = (claw.state === 'STRUGGLING') ? (Math.random() - 0.5) * 9 : 0;
       const wobbleY = (claw.state === 'STRUGGLING') ? (Math.random() - 0.5) * 6 : 0;
@@ -1258,7 +1896,7 @@
       drawNiceCapsule(state.grabbedCap);
     }
 
-    // Draw Slipped Capsule falling down
+    // Slipped Capsule falling down
     if (state.fallingCap) {
       state.fallingCap.y += 280 * dt;
       drawNiceCapsule(state.fallingCap);
@@ -1267,7 +1905,7 @@
       }
     }
 
-    // 8. Draw UFO Claw Cable, Saucer Head & Prongs
+    // 9. UFO Claw Cable, Saucer Head & Prongs
     ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
@@ -1275,13 +1913,11 @@
     ctx.lineTo(claw.x, claw.y - 6);
     ctx.stroke();
 
-    // UFO Glass Dome
-    ctx.fillStyle = (claw.state === 'STRUGGLING') ? 'rgba(255, 183, 3, 0.7)' : 'rgba(0, 240, 255, 0.65)';
+    ctx.fillStyle = (claw.state === 'STRUGGLING') ? 'rgba(255, 183, 3, 0.75)' : 'rgba(0, 240, 255, 0.65)';
     ctx.beginPath();
     ctx.arc(claw.x, claw.y - 5, 9, Math.PI, 0);
     ctx.fill();
 
-    // UFO Metallic Saucer Rim
     ctx.fillStyle = '#e2e8f0';
     ctx.beginPath();
     ctx.ellipse(claw.x, claw.y - 4, 15, 5, 0, 0, Math.PI * 2);
@@ -1290,7 +1926,6 @@
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Blinking UFO lights
     ctx.fillStyle = (claw.state === 'STRUGGLING') ? '#ff2a7a' : '#00f0ff';
     [-8, 0, 8].forEach(dx => {
       ctx.beginPath();
@@ -1298,7 +1933,6 @@
       ctx.fill();
     });
 
-    // Articulated Prongs
     const isOpen = (claw.state === 'IDLE' || claw.state === 'MOVING' || claw.state === 'DROPPING') && !state.grabbedCap;
     const prongAngle = isOpen ? 0.58 : 0.16;
     ctx.strokeStyle = '#e2e8f0';
@@ -1324,6 +1958,209 @@
     ctx.lineTo(-8, 23);
     ctx.stroke();
     ctx.restore();
+
+    // 10. Arcade Particles & Floating Popups
+    for (let i = state.arcadeParticles.length - 1; i >= 0; i--) {
+      const p = state.arcadeParticles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 220 * dt;
+      p.life -= dt;
+      if (p.life <= 0) {
+        state.arcadeParticles.splice(i, 1);
+      } else {
+        ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+      const ft = state.floatingTexts[i];
+      ft.y += ft.vy * dt;
+      ft.life -= dt;
+      if (ft.life <= 0) {
+        state.floatingTexts.splice(i, 1);
+      } else {
+        ctx.globalAlpha = Math.min(1, ft.life * 1.4);
+        ctx.font = '900 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#05040a';
+        ctx.fillText(ft.text, ft.x + 1, ft.y + 1);
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // ==========================================
+  // 6. REVEAL MODAL FX CANVAS (CONFETTI / FLIES / SHOCKWAVES)
+  // ==========================================
+  const fxCanvas = document.getElementById('reveal-fx-canvas');
+  const fxCtx = fxCanvas.getContext('2d');
+  let revealParticles = [];
+  let revealShockwaves = [];
+  let revealFlies = [];
+
+  function clearRevealFX() {
+    revealParticles = [];
+    revealShockwaves = [];
+    revealFlies = [];
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+  }
+
+  function triggerRevealFX(rarity) {
+    const rect = document.getElementById('reveal-modal').getBoundingClientRect();
+    fxCanvas.width = rect.width || 600;
+    fxCanvas.height = rect.height || 500;
+    const cx = fxCanvas.width / 2;
+    const cy = fxCanvas.height * 0.36;
+
+    clearRevealFX();
+
+    // Expanding shockwave ring
+    const ringColor = RARITY_META[rarity].color;
+    revealShockwaves.push({ x: cx, y: cy, r: 10, maxR: Math.max(fxCanvas.width, fxCanvas.height) * 0.65, color: ringColor, alpha: 0.95 });
+    if (rarity === 'r' || rarity === 'l') {
+      revealShockwaves.push({ x: cx, y: cy, r: 5, maxR: Math.max(fxCanvas.width, fxCanvas.height) * 0.85, color: '#ffffff', alpha: 0.85 });
+    }
+
+    if (rarity === 'vc') {
+      // Sad grey dust puffs + buzzing cartoon flies!
+      for (let i = 0; i < 24; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 45 + Math.random() * 140;
+        revealParticles.push({
+          x: cx, y: cy,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: 4 + Math.random() * 5,
+          color: i % 2 === 0 ? '#64748b' : '#84cc16',
+          shape: 'circle',
+          rot: 0, vRot: 0,
+          life: 1.4 + Math.random() * 0.8,
+          gravity: 30
+        });
+      }
+      for (let f = 0; f < 5; f++) {
+        revealFlies.push({
+          cx, cy: cy - 10,
+          rx: 38 + Math.random() * 34,
+          ry: 18 + Math.random() * 20,
+          angle: Math.random() * Math.PI * 2,
+          speed: (3.5 + Math.random() * 2.5) * (Math.random() < 0.5 ? 1 : -1)
+        });
+      }
+    } else {
+      // Celebratory confetti, stars & diamonds scaled by rarity!
+      const count = rarity === 'l' ? 110 : rarity === 'r' ? 75 : rarity === 'uc' ? 45 : 30;
+      const palettes = {
+        c:  ['#39ff14', '#86efac', '#ffffff', '#fde047'],
+        uc: ['#00f0ff', '#38bdf8', '#f472b6', '#ffffff'],
+        r:  ['#e879f9', '#d946ef', '#00f0ff', '#fde047', '#ffffff'],
+        l:  ['#ffb703', '#fde047', '#ff2a7a', '#00f0ff', '#39ff14', '#ffffff']
+      };
+      const cols = palettes[rarity] || palettes.c;
+
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 90 + Math.random() * (rarity === 'l' ? 320 : 220);
+        revealParticles.push({
+          x: cx, y: cy,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd - 90,
+          size: 5 + Math.random() * 6,
+          color: cols[i % cols.length],
+          shape: (rarity === 'l' || rarity === 'r') && i % 3 === 0 ? 'diamond' : 'rect',
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 10,
+          life: 2.2 + Math.random() * 1.4,
+          gravity: 240
+        });
+      }
+    }
+  }
+
+  function updateAndDrawRevealFX(dt) {
+    if (!document.getElementById('reveal-modal').classList.contains('open')) return;
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+
+    // Shockwaves
+    for (let i = revealShockwaves.length - 1; i >= 0; i--) {
+      const sw = revealShockwaves[i];
+      sw.r += 540 * dt;
+      sw.alpha -= 1.35 * dt;
+      if (sw.alpha <= 0 || sw.r >= sw.maxR) {
+        revealShockwaves.splice(i, 1);
+      } else {
+        fxCtx.save();
+        fxCtx.strokeStyle = sw.color;
+        fxCtx.globalAlpha = Math.max(0, sw.alpha);
+        fxCtx.lineWidth = 5;
+        fxCtx.beginPath();
+        fxCtx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+        fxCtx.stroke();
+        fxCtx.restore();
+      }
+    }
+
+    // Confetti & Sparks
+    for (let i = revealParticles.length - 1; i >= 0; i--) {
+      const p = revealParticles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += p.gravity * dt;
+      p.vx *= 0.985;
+      p.rot += p.vRot * dt;
+      p.life -= dt;
+      if (p.life <= 0) {
+        revealParticles.splice(i, 1);
+      } else {
+        fxCtx.save();
+        fxCtx.translate(p.x, p.y);
+        fxCtx.rotate(p.rot);
+        fxCtx.globalAlpha = Math.min(1, p.life);
+        fxCtx.fillStyle = p.color;
+        if (p.shape === 'circle') {
+          fxCtx.beginPath();
+          fxCtx.arc(0, 0, p.size * 0.5, 0, Math.PI * 2);
+          fxCtx.fill();
+        } else if (p.shape === 'diamond') {
+          fxCtx.beginPath();
+          fxCtx.moveTo(0, -p.size);
+          fxCtx.lineTo(p.size * 0.7, 0);
+          fxCtx.lineTo(0, p.size);
+          fxCtx.lineTo(-p.size * 0.7, 0);
+          fxCtx.closePath();
+          fxCtx.fill();
+        } else {
+          fxCtx.fillRect(-p.size * 0.5, -p.size * 0.35, p.size, p.size * 0.7);
+        }
+        fxCtx.restore();
+      }
+    }
+
+    // Buzzing Cartoon Flies for Very Common Trash Prizes
+    revealFlies.forEach(f => {
+      f.angle += f.speed * dt;
+      const fx = f.cx + Math.cos(f.angle) * f.rx;
+      const fy = f.cy + Math.sin(f.angle * 2) * f.ry;
+      fxCtx.save();
+      fxCtx.fillStyle = '#0f172a';
+      fxCtx.beginPath();
+      fxCtx.ellipse(fx, fy, 4, 3, 0, 0, Math.PI * 2);
+      fxCtx.fill();
+      fxCtx.fillStyle = 'rgba(255,255,255,0.8)';
+      const wingFlap = Math.sin(performance.now() * 0.05) * 2;
+      fxCtx.beginPath();
+      fxCtx.ellipse(fx - 1, fy - 3 + wingFlap * 0.3, 3, 1.8, -0.4, 0, Math.PI * 2);
+      fxCtx.fill();
+      fxCtx.restore();
+    });
   }
 
   function loop(now) {
@@ -1333,11 +2170,16 @@
     if (state.phase === 'ARCADE' || state.phase === 'STRUGGLING') {
       if (state.phase === 'ARCADE' && (claw.state === 'IDLE' || claw.state === 'MOVING')) {
         state.arcTimeLeft -= dt;
+        const timerEl = document.getElementById('arcade-timer');
+        if (state.arcTimeLeft <= 3.0) {
+          timerEl.classList.add('urgent');
+        }
         if (state.arcTimeLeft <= 0) {
           state.arcTimeLeft = 0;
+          spawnFloatingText(claw.x, claw.y + 30, "TIME'S UP!", '#ffb703');
           triggerDrop();
         }
-        document.getElementById('arcade-timer').textContent = state.arcTimeLeft.toFixed(1);
+        timerEl.textContent = state.arcTimeLeft.toFixed(1);
       }
 
       if (state.phase === 'STRUGGLING' && state.grabbedCap) {
@@ -1350,6 +2192,7 @@
         if (struggleData.hp <= 0) {
           document.getElementById('struggle-ui').classList.remove('active');
           sfx.slip();
+          spawnFloatingText(claw.x, claw.y + 24, 'IT SLIPPED!', '#ff2a7a');
           state.fallingCap = state.grabbedCap;
           state.grabbedCap = null;
           state.phase = 'ARCADE';
@@ -1363,15 +2206,16 @@
     }
 
     drawArcade(dt);
+    updateAndDrawRevealFX(dt);
     requestAnimationFrame(loop);
   }
 
   // ==========================================
-  // 6. QUIZ & ARCADE FLOW
+  // 7. QUIZ & ARCADE FLOW
   // ==========================================
   function updateHUD() {
     document.getElementById('q-counter').textContent = `Q: ${Math.min(state.qIdx + 1, state.deck.length)}/${state.deck.length}`;
-    document.getElementById('prize-counter').textContent = `Prizes: ${state.totalPrizes}`;
+    document.getElementById('networth-counter').textContent = `Value: ${formatCompactMoney(state.totalNetWorth)}`;
     const unlockedCount = Object.keys(state.inventory).length;
     document.getElementById('dex-count').textContent = `${unlockedCount}/25`;
   }
@@ -1380,6 +2224,7 @@
     if (state.phase === 'TRANSITION') return;
     state.phase = 'TRANSITION';
 
+    clearRevealFX();
     document.getElementById('reveal-modal').classList.remove('open');
     document.getElementById('miss-modal').classList.remove('open');
     document.getElementById('struggle-ui').classList.remove('active');
@@ -1394,6 +2239,7 @@
     state.qIdx = 0;
     state.inventory = {};
     state.totalPrizes = 0;
+    state.totalNetWorth = 0;
     updateHUD();
 
     document.getElementById('start-modal').classList.remove('open');
@@ -1548,7 +2394,7 @@
   document.getElementById('btn-miss-next').addEventListener('click', advanceToNextQuestion);
 
   // ==========================================
-  // 7. ARCADE INPUTS & STRUGGLE
+  // 8. ARCADE INPUTS, STRUGGLE & EXAGGERATED REVEAL
   // ==========================================
   const btnR = document.getElementById('btn-right');
   const btnD = document.getElementById('btn-drop');
@@ -1618,6 +2464,99 @@
   document.getElementById('btn-tap').addEventListener('mousedown', (e) => { e.preventDefault(); boostStruggle(); });
   document.getElementById('btn-tap').addEventListener('touchstart', (e) => { e.preventDefault(); boostStruggle(); }, { passive: false });
 
+  function animatePriceRollup(el, targetVal, finalText) {
+    if (targetVal <= 5) {
+      el.textContent = finalText;
+      return;
+    }
+    const duration = 750;
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = Math.floor(targetVal * eased);
+      el.textContent = `Est. Value: $${current.toLocaleString()}`;
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = finalText;
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function playExaggeratedReveal(wonCap) {
+    const meta = RARITY_META[wonCap.rarity];
+    const modal = document.getElementById('reveal-modal');
+    const box = document.getElementById('reveal-box');
+    const headerTitle = document.getElementById('rev-header-title');
+    const capWrap = document.getElementById('cracking-capsule');
+    const capBot = document.getElementById('cap-bot');
+    const rays = document.getElementById('rev-rays');
+    const artBox = document.getElementById('rev-art');
+    const details = document.getElementById('rev-details');
+    const appFrame = document.getElementById('app-frame');
+
+    // 1. Reset Reveal Stage to Closed Rattling Capsule
+    box.className = `modal-box tier-${wonCap.rarity}`;
+    headerTitle.textContent = 'CRACKING CAPSULE...';
+    headerTitle.style.color = '#00f0ff';
+
+    capWrap.className = 'shaking';
+    capWrap.style.display = 'flex';
+    capBot.style.background = `radial-gradient(circle at 35% 35%, ${wonCap.shell.light}, ${wonCap.shell.main} 70%, ${wonCap.shell.dark})`;
+
+    rays.className = `sunburst-rays rays-${wonCap.rarity}`;
+    artBox.className = 'prize-showcase';
+    artBox.innerHTML = getPrizeSVG(wonCap.prize.id);
+    artBox.style.borderColor = meta.border;
+
+    details.style.opacity = '0';
+
+    const rarEl = document.getElementById('rev-rarity');
+    rarEl.className = `prize-rarity ${meta.badge}`;
+    rarEl.textContent = meta.label;
+
+    document.getElementById('rev-name').textContent = wonCap.prize.n;
+    const priceEl = document.getElementById('rev-price');
+    priceEl.className = `prize-price-tag ${wonCap.rarity === 'vc' ? 'trash-price' : ''}`;
+    priceEl.textContent = 'Est. Value: $0';
+    document.getElementById('rev-quip').textContent = `"${wonCap.prize.quip}"`;
+
+    modal.classList.add('open');
+
+    // Rattle ticks leading up to pop
+    sfx.rattleTick(0);
+    setTimeout(() => { if (state.phase === 'REVEAL') sfx.rattleTick(1); }, 220);
+    setTimeout(() => { if (state.phase === 'REVEAL') sfx.rattleTick(2); }, 440);
+    setTimeout(() => { if (state.phase === 'REVEAL') sfx.rattleTick(3); }, 660);
+
+    // 2. Crack Capsule & Burst Open at 820ms!
+    setTimeout(() => {
+      if (state.phase !== 'REVEAL') return;
+
+      capWrap.classList.remove('shaking');
+      capWrap.classList.add('cracked');
+      rays.classList.add('active');
+      artBox.classList.add('revealed');
+      details.style.opacity = '1';
+
+      headerTitle.textContent = meta.banner;
+      headerTitle.style.color = meta.color;
+
+      sfx.crackPop();
+      sfx.revealFanfare(wonCap.rarity);
+      triggerRevealFX(wonCap.rarity);
+      animatePriceRollup(priceEl, wonCap.prize.val, wonCap.prize.priceText);
+
+      if (wonCap.rarity === 'r' || wonCap.rarity === 'l') {
+        appFrame.classList.remove('screen-shake');
+        void appFrame.offsetWidth;
+        appFrame.classList.add('screen-shake');
+      }
+    }, 820);
+  }
+
   function endArcadeCycle() {
     claw.state = 'IDLE';
     document.getElementById('arcade-timer').style.display = 'none';
@@ -1627,19 +2566,12 @@
       state.grabbedCap = null;
       state.phase = 'REVEAL';
 
-      sfx.win(wonCap.rarity === 'l');
       state.inventory[wonCap.prize.id] = (state.inventory[wonCap.prize.id] || 0) + 1;
       state.totalPrizes++;
+      state.totalNetWorth += wonCap.prize.val;
       updateHUD();
 
-      const meta = RARITY_META[wonCap.rarity];
-      document.getElementById('rev-icon').textContent = wonCap.prize.e;
-      document.getElementById('rev-name').textContent = wonCap.prize.n;
-      const rarEl = document.getElementById('rev-rarity');
-      rarEl.className = `prize-rarity ${meta.badge}`;
-      rarEl.textContent = meta.label;
-
-      document.getElementById('reveal-modal').classList.add('open');
+      playExaggeratedReveal(wonCap);
     } else {
       state.phase = 'MISS';
       document.getElementById('miss-modal').classList.add('open');
@@ -1647,13 +2579,14 @@
   }
 
   // ==========================================
-  // 8. DISPLAY SHELF & END SCREEN
+  // 9. DISPLAY SHELF & END SCREEN
   // ==========================================
   function renderShelf() {
     const grid = document.getElementById('shelf-grid');
     grid.innerHTML = '';
     const unlockedCount = Object.keys(state.inventory).length;
-    document.getElementById('shelf-subtitle').textContent = `Unlocked ${unlockedCount} / 25 Prizes (Total Grabbed: ${state.totalPrizes})`;
+    document.getElementById('shelf-subtitle').textContent =
+      `Unlocked ${unlockedCount} / 25 Prizes | Total Collection Value: ${formatCompactMoney(state.totalNetWorth)}`;
 
     ['l', 'r', 'uc', 'c', 'vc'].forEach(rType => {
       PRIZES[rType].forEach(p => {
@@ -1664,9 +2597,10 @@
           div.style.borderColor = RARITY_META[rType].border;
         }
         div.innerHTML = `
-          <div class="shelf-icon">${count > 0 ? p.e : '❓'}</div>
+          <div class="shelf-art">${count > 0 ? getPrizeSVG(p.id) : getPrizeSVG('locked')}</div>
           <div class="shelf-label">${count > 0 ? p.n : '???'}</div>
-          <div class="shelf-qty">${count > 0 ? 'x' + count : rType.toUpperCase()}</div>
+          <div class="shelf-val">${count > 0 ? formatCompactMoney(p.val) : ''}</div>
+          <div class="shelf-qty">${count > 0 ? 'x' + count : RARITY_META[rType].label}</div>
         `;
         grid.appendChild(div);
       });
@@ -1691,6 +2625,7 @@
     document.getElementById('end-summary').innerHTML =
       `You completed all <b>20</b> Past Tense questions!<br><br>` +
       `🎁 Total Prizes Grabbed: <b>${state.totalPrizes}</b><br>` +
+      `💰 Total Prize Collection Value: <b>${formatCompactMoney(state.totalNetWorth)}</b><br>` +
       `🏆 Unique Collection Unlocked: <b>${unlockedCount} / 25</b>`;
     document.getElementById('end-modal').classList.add('open');
   }
